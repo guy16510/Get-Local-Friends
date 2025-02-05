@@ -4,7 +4,7 @@ import { schema as userProfileSchema } from './data/resource';
 import { auth } from './auth/resource';
 import { handler as contactFunction } from './functions/contact/handler';
 
-defineBackend({
+defineBackend({ //fix userProfile
   data: userProfileSchema,
   functions: {
     userProfile: userProfileFunction, // Ensure this is correctly defined
