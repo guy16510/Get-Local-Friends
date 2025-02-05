@@ -1,14 +1,5 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
-/*== SCHEMA DEFINITION =====================================================
-This schema now includes:
-  - A Todo model with a "content" field and a new "isDone" boolean.
-  - A sayHello query.
-  - A signup mutation that accepts a complete set of user registration fields.
-  - A contact mutation that accepts name, email, and message.
-  - A profile query that fetches a user profile by email.
-All endpoints use API key authorization.
-========================================================================*/
 export const schema = a.schema({
   Contact: a
     .model({
@@ -16,6 +7,7 @@ export const schema = a.schema({
       email: a.string().required(),
       message: a.string().required(),
       timestamp: a.datetime().required(),
+      
     })
     .authorization([a.allow.publicApiKey()]),
 
