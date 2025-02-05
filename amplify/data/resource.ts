@@ -8,7 +8,7 @@ export const schema = a.schema({
       message: a.string().required(),
       timestamp: a.datetime().required(),
     })
-    .authorization([a.allow.publicApiKey()]),
+    .authorization((auth) => [auth.publicApiKey()]),
 
   UserProfile: a
     .model({
@@ -21,8 +21,9 @@ export const schema = a.schema({
       kids: a.string().required(),
       zipcode: a.string().required(),
       drinking: a.string().required(),
-      hobbies: a.array(a.string()).required(),
-      availability: a.array(a.string()).required(),
+      // Replace the old a.array(...) call with a scalar chained with .list()
+      hobbies: a.string().array().required(),
+      availability: a.string().array().required(),
       married: a.string().required(),
       ageRange: a.string().required(),
       friendAgeRange: a.string().required(),
@@ -33,7 +34,7 @@ export const schema = a.schema({
       createdAt: a.datetime(),
       updatedAt: a.datetime(),
     })
-    .authorization([a.allow.publicApiKey()]),
+    .authorization((auth) => [auth.publicApiKey()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

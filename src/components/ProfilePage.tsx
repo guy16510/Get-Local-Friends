@@ -13,16 +13,16 @@ interface ProfileData {
   kids: string;
   zipcode: string;
   drinking: string;
-  hobbies: string[];
-  availability: string[];
+  hobbies: (string | null)[];
+  availability: (string | null)[];
   married: string;
   ageRange: string;
   friendAgeRange: string;
   pets: string;
   employed: string;
   work: string;
-  political?: string;
-  createdAt?: string;
+  political?: string | null;
+  createdAt?: string | null;
 }
 
 const ProfilePage: React.FC = () => {
@@ -56,12 +56,39 @@ const ProfilePage: React.FC = () => {
           }
         }
       });
-      
-      if (profiles.length === 0) {
+  
+      if (profiles.data.length === 0) {
         throw new Error('Profile not found');
       }
-      
-      setProfile(profiles[0]);
+  
+      const rawProfile = profiles.data[0];
+  
+      // Normalize hobbies and availability by filtering out any null values.
+      const normalizedProfile: ProfileData = {
+        firstName: rawProfile.firstName,
+        lastNameInitial: rawProfile.lastNameInitial,
+        email: rawProfile.email,
+        lookingFor: rawProfile.lookingFor,
+        kids: rawProfile.kids,
+        zipcode: rawProfile.zipcode,
+        drinking: rawProfile.drinking,
+        hobbies: (rawProfile.hobbies || []).filter(
+          (item): item is string => item !== null
+        ),
+        availability: (rawProfile.availability || []).filter(
+          (item): item is string => item !== null
+        ),
+        married: rawProfile.married,
+        ageRange: rawProfile.ageRange,
+        friendAgeRange: rawProfile.friendAgeRange,
+        pets: rawProfile.pets,
+        employed: rawProfile.employed,
+        work: rawProfile.work,
+        political: rawProfile.political,
+        createdAt: rawProfile.createdAt,
+      };
+  
+      setProfile(normalizedProfile);
     } catch (err: any) {
       setError(err.message);
       setProfile(null);
