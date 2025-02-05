@@ -1,4 +1,4 @@
-import { ThemeProvider, Card, Heading, Text, Button, View, Image, Flex } from '@aws-amplify/ui-react';
+import { ThemeProvider, Card, Heading, Text, Button, View, Flex } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 
 const theme = {
