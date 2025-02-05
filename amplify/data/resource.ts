@@ -18,23 +18,12 @@ const schema = a.schema({
       isDone: a.boolean(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
-  sayHello: a
-    .query()
-    .arguments({
-      name: a.string(),
-    })
-    .returns(a.string())
-    .handler(a.handler.function(sayHello))
-    .authorization((allow) => [allow.publicApiKey()]),
-  contact: a
-    .mutation()
-    .arguments({
+  Contact: a
+    .model({
       name: a.string(),
       email: a.string(),
       message: a.string(),
     })
-    .returns(a.string())
-    .handler(a.handler.function(contact))
     .authorization((allow) => [allow.publicApiKey()]),
 });
 
