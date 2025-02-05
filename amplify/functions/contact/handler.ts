@@ -19,7 +19,7 @@ export const handler = async (event: any, context: Context) => {
       name,
       email,
       message,
-      timestamp: new Date().toISOString()
+      timestamp: [new Date().toISOString()]
     });
 
     return {
