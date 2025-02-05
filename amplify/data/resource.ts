@@ -7,7 +7,6 @@ export const schema = a.schema({
       email: a.string().required(),
       message: a.string().required(),
       timestamp: a.datetime().required(),
-      
     })
     .authorization([a.allow.publicApiKey()]),
 
@@ -43,7 +42,6 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: "apiKey",
-    // API Key is used for a.allow.public() rules
     apiKeyAuthorizationMode: {
       expiresInDays: 30,
     },

@@ -28,7 +28,6 @@ type UserProfile = {
   updatedAt?: string;
 };
 
-// 🔥 MAIN HANDLER
 export const handler = async (event: APIGatewayEvent, context: Context) => {
   console.log("Received event:", JSON.stringify(event, null, 2));
 
@@ -49,7 +48,6 @@ export const handler = async (event: APIGatewayEvent, context: Context) => {
   }
 };
 
-// 🔥 CREATE USER PROFILE
 async function createProfile(event: APIGatewayEvent) {
   if (!event.body) return errorResponse(400, "Missing request body");
 
@@ -67,7 +65,6 @@ async function createProfile(event: APIGatewayEvent) {
   return successResponse(201, profile);
 }
 
-// 🔥 GET USER PROFILE
 async function getProfile(event: APIGatewayEvent) {
   const userId = event.pathParameters?.userId;
   if (!userId) return errorResponse(400, "Missing userId");
@@ -83,7 +80,6 @@ async function getProfile(event: APIGatewayEvent) {
   return successResponse(200, result.Item);
 }
 
-// 🔥 UPDATE USER PROFILE
 async function updateProfile(event: APIGatewayEvent) {
   const userId = event.pathParameters?.userId;
   if (!userId) return errorResponse(400, "Missing userId");
@@ -93,7 +89,7 @@ async function updateProfile(event: APIGatewayEvent) {
   const updates: Partial<UserProfile> = JSON.parse(event.body);
   updates.updatedAt = new Date().toISOString();
 
-  const updateExpressionParts = [];
+  const updateExpressionParts: string[] = [];
   const expressionAttributeNames: Record<string, string> = {};
   const expressionAttributeValues: Record<string, any> = {};
 
@@ -105,7 +101,8 @@ async function updateProfile(event: APIGatewayEvent) {
     expressionAttributeValues[attrValue] = updates[key as keyof UserProfile];
   });
 
-  if (updateExpressionParts.length === 0) return errorResponse(400, "No valid fields to update");
+  if (updateExpressionParts.length === 0)
+    return errorResponse(400, "No valid fields to update");
 
   await ddbDocClient.send(
     new UpdateCommand({
@@ -120,7 +117,6 @@ async function updateProfile(event: APIGatewayEvent) {
   return successResponse(200, { message: "Profile updated successfully" });
 }
 
-// 🔥 UTILITIES: SUCCESS + ERROR RESPONSE HANDLERS
 function successResponse(statusCode: number, data: any) {
   return {
     statusCode,
