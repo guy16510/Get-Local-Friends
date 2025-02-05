@@ -1,4 +1,4 @@
-import { type Schema } from "../../data/user-profile";
+import { type Schema } from "../../data/resource";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
@@ -8,13 +8,22 @@ const TABLE_NAME = process.env.USER_PROFILE_TABLE_NAME;
 
 type UserProfile = {
   userId: string;
-  isSmoker: boolean;
-  isDrinker: boolean;
-  hasPets: boolean;
-  married: boolean;
-  hasChildren: boolean;
-  relationshipStatus: string;
-  isInterestedIn: string;
+  firstName: string;
+  lastNameInitial: string;
+  email: string;
+  lookingFor: string;
+  kids: string;
+  zipcode: string;
+  drinking: string;
+  hobbies: string[];
+  availability: string[];
+  married: string;
+  ageRange: string;
+  friendAgeRange: string;
+  pets: string;
+  employed: string;
+  work: string;
+  political?: string;
 };
 
 export const handler = async (event: any) => {

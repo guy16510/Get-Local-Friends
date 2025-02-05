@@ -1,34 +1,36 @@
-// /backend/src/contact/handler.ts
-import type { Schema } from '../../data/resource';
-import { PutCommand } from '@aws-sdk/lib-dynamodb';
-import { ddbDocClient, TableName } from './resource';
+import { Context } from 'aws-lambda';
+import { type Schema } from "../../data/resource";
+import { generateClient } from 'aws-amplify/data';
 
-export const handler: Schema["contact"]["functionHandler"] = async (event) => {
-  console.log("Received event:", JSON.stringify(event));
-  
-  const { name, email, message } = event.arguments;
-  
-  // Construct the DynamoDB item explicitly (avoid spreading to prevent duplicate keys)
-  const item = {
-    name,
-    email,
-    message,
-    createdAt: new Date().toISOString()
-  };
-  
-  const params = {
-    TableName,
-    Item: item
-  };
-  
-  console.log("DynamoDB PutCommand params:", JSON.stringify(params));
-  
+const client = generateClient<Schema>();
+
+export const handler = async (event: any, context: Context) => {
   try {
-    const result = await ddbDocClient.send(new PutCommand(params));
-    console.log("DynamoDB result:", JSON.stringify(result));
-    return "Contact message received";
-  } catch (err) {
-    console.error("DynamoDB error:", err);
-    throw new Error("Internal Server Error");
+    const { name = '', email, message } = JSON.parse(event.body);
+
+    if (!email || !message) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Email and message are required' })
+      };
+    }
+
+    const contact = await client.models.Contact.create({
+      name,
+      email,
+      message,
+      timestamp: new Date().toISOString()
+    });
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(contact)
+    };
+  } catch (error) {
+    console.error('Error processing contact form:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Failed to process contact form submission' })
+    };
   }
 };

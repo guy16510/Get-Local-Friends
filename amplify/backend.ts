@@ -1,19 +1,15 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { userProfileFunction } from './functions/user-profile/resource';
-import userProfileSchema from './data/user-profile/schema';
+import { schema as userProfileSchema } from './data/resource';
 import { auth } from './auth/resource';
-import { data } from './data/resource';
-import { sayHello } from './functions/say-hello/resource';
-import { contact } from './functions/contact/resource';
+import { contactFunction } from './functions/contact/resource';
 
 
 defineBackend({
   data: userProfileSchema,
   functions: {
-    userProfile: userProfileFunction
+    userProfile: userProfileFunction,
+    contact: contactFunction
   },
-  auth,
-  data,
-  sayHello,
-  contact
+  auth
 });

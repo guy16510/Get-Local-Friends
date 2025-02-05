@@ -30,18 +30,11 @@ const ContactUs: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+      await client.models.Contact.create({
+        ...formData,
+        timestamp: new Date().toISOString()
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit contact form.');
-      }
-
+      
       setResponseMessage('Thank you for contacting us!');
       setFormData({ name: '', email: '', message: '' });
     } catch (err: any) {
@@ -50,17 +43,9 @@ const ContactUs: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
-  function getSTuff() {
-    client.mutations.contact({
-      name: "contact",
-      email: "foo@bar.com",
-      message: " Hello world"
-    });
-  }
   return (
     <div>
-      <button onClick={getSTuff}>Get STuff</button>
+      
       <h1>Contact Us</h1>
       {responseMessage && <p>{responseMessage}</p>}
       <form onSubmit={handleSubmit}>

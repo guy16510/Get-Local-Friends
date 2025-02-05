@@ -1,5 +1,9 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { generateClient } from "aws-amplify/data";
+import type { Schema } from "../../amplify/data/resource";
+
+const client = generateClient<Schema>();
 
 interface ProfileData {
   firstName: string;
@@ -45,12 +49,19 @@ const ProfilePage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/profile?email=${encodeURIComponent(emailToFetch)}`);
-      if (!response.ok) {
+      const profiles = await client.models.UserProfile.list({
+        filter: {
+          email: {
+            eq: emailToFetch
+          }
+        }
+      });
+      
+      if (profiles.length === 0) {
         throw new Error('Profile not found');
       }
-      const data = await response.json();
-      setProfile(data);
+      
+      setProfile(profiles[0]);
     } catch (err: any) {
       setError(err.message);
       setProfile(null);
