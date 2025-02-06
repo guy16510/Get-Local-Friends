@@ -1,4 +1,3 @@
-// amplify/functions/searchUserProfile/resource.ts
 import { defineFunction } from "@aws-amplify/backend";
 
 export const searchUserProfileFunction = defineFunction({
