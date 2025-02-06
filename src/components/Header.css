@@ -1,0 +1,30 @@
+/* Desktop navigation: inline nav links */
+.nav-links {
+  display: flex !important;
+  gap: 1rem;
+}
+
+/* Default hamburger menu is hidden on desktop */
+.hamburger {
+  display: none !important;
+}
+
+/* Mobile nav (when hamburger is toggled) */
+.mobile-nav {
+  display: none !important;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none !important;
+  }
+  .hamburger {
+    display: inline-flex !important;
+  }
+  .mobile-nav {
+    display: flex !important;
+  }
+}

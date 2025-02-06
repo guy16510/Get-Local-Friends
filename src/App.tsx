@@ -1,85 +1,39 @@
-// import { useEffect, useState } from "react";
-// import type { Schema } from "../amplify/data/resource";
-// import { generateClient } from "aws-amplify/data";
-// import { useAuthenticator } from '@aws-amplify/ui-react';
-
-// const client = generateClient<Schema>();
-
-// function App() {
-//   const { signOut } = useAuthenticator();
-//   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
-
-//   useEffect(() => {
-//     client.models.Todo.observeQuery().subscribe({
-//       next: (data) => setTodos([...data.items]),
-//     });
-//   }, []);
-
-//   function createTodo() {
-//     client.models.Todo.create({ content: window.prompt("Todo content") });
-//   }
-
-//   function doSomething(){
-//     client.queries.sayHello({
-//       name: "Amplify",
-//     });
-//   }
-    
-//   function deleteTodo(id: string) {
-//     client.models.Todo.delete({ id })
-//   }
-
-//   return (
-//     <main>
-//       <button onClick={signOut}>Sign out</button>
-//       <h1>My todos</h1>
-//       <button onClick={createTodo}>+ new</button>
-//       <button onClick={doSomething}>+ New Shit</button>
-
-//       <ul>
-//         {todos.map((todo) => (
-//           <li 
-//           onClick={() => deleteTodo(todo.id)}
-//           key={todo.id}>{todo.content}</li>
-          
-//         ))}
-//       </ul>
-//       <div>
-//         🥳 App successfully hosted. Try creating a new todo.
-//         <br />
-//         <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-//           Review next step of this tutorial.
-//         </a>
-//       </div>
-//     </main>
-//   );
-// }
-
-// export default App;
-
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+// src/App.tsx
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from '@aws-amplify/ui-react';
+import theme from './theme'; // your custom theme (or defaultTheme)
+import Header from './components/Header';
 import HomePage from './components/HomePage';
 import SignupForm from './components/SignupForm';
 import ContactUs from './components/ContactUs';
 import ProfilePage from './components/ProfilePage';
+import SearchPage from './components/SearchPage';
 
 const App: React.FC = () => {
+  // Maintain dark/light mode in state:
+  const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
+
+  // Sync the body's class with the current color mode:
+  useEffect(() => {
+    document.body.classList.remove('light', 'dark');
+    document.body.classList.add(colorMode);
+  }, [colorMode]);
+
   return (
-    <Router>
-      <nav style={{ marginBottom: '20px' }}>
-        <Link to="/">Home</Link> |{' '}
-        <Link to="/signup">Sign Up</Link> |{' '}
-        <Link to="/contact">Contact Us</Link> |{' '}
-        <Link to="/profile">Profile</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/signup" element={<SignupForm />} />
-        <Route path="/contact" element={<ContactUs />} />
-        <Route path="/profile" element={<ProfilePage />} />
-      </Routes>
-    </Router>
+    <ThemeProvider theme={theme} colorMode={colorMode}>
+      <Router>
+        {/* Pass down the mode state & setter to the header */}
+        <Header colorMode={colorMode} setColorMode={setColorMode} />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/signup" element={<SignupForm />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/search" element={<SearchPage />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 };
 

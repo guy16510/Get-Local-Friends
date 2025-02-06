@@ -21,7 +21,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ currentStep, totalSteps }) =>
         />
       </div>
       <p>
-        Step {currentStep + 1} of {totalSteps}
+      Step {currentStep} of {totalSteps}
       </p>
     </div>
   );

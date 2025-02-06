@@ -1,92 +1,56 @@
-import React, { useState, ChangeEvent, FormEvent } from 'react';
+// src/components/SignupForm.tsx
+import React, { useState, FormEvent } from 'react';
+import { Button, Flex, Heading, View, Text } from '@aws-amplify/ui-react';
+import QuestionForm from './QuestionForm';
+import { questions, Question } from '../data/questions';
 import ProgressBar from './ProgressBar';
+import type { Schema } from '../../amplify/data/resource';
+import { generateClient } from 'aws-amplify/data';
+
+const client = generateClient<Schema>();
 
 interface FormData {
-  firstName: string;
-  lastNameInitial: string;
-  email: string;
-  password: string;
-  lookingFor: string;
-  kids: string;
-  zipcode: string;
-  drinking: string;
-  hobbies: string[];
-  availability: string[];
-  married: string;
-  ageRange: string;
-  friendAgeRange: string;
-  pets: string;
-  employed: string;
-  work: string;
-  political?: string;
+  [key: string]: any;
 }
 
 const SignupForm: React.FC = () => {
-  // Break the form into multiple steps
-  const [currentStep, setCurrentStep] = useState<number>(0);
-  const [formData, setFormData] = useState<FormData>({
-    firstName: '',
-    lastNameInitial: '',
-    email: '',
-    password: '',
-    lookingFor: '',
-    kids: '',
-    zipcode: '',
-    drinking: '',
-    hobbies: [],
-    availability: [],
-    married: '',
-    ageRange: '',
-    friendAgeRange: '',
-    pets: '',
-    employed: '',
-    work: '',
-    political: ''
-  });
+  const [currentQuestion, setCurrentQuestion] = useState<number>(0);
+  const [formData, setFormData] = useState<FormData>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const steps = [
-    'Basic Info',
-    'Preferences',
-    'Hobbies & Availability',
-    'Age & Pets',
-    'Employment',
-    'Political'
-  ];
-
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // For fields that allow multiple selections (like hobbies/availability)
-  const handleArrayChange = (name: keyof FormData, value: string) => {
-    setFormData(prev => {
-      const array = (prev[name] as unknown as string[]) || [];
-      return {
-        ...prev,
-        [name]: array.includes(value)
-          ? array.filter(item => item !== value)
-          : [...array, value]
-      };
-    });
-  };
-
-  const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(prev => prev + 1);
+  // Validate answer for required questions
+  const isAnswerValid = (question: Question, answer: any): boolean => {
+    if (!question.required) return true;
+    switch (question.type) {
+      case 'checkbox':
+        return Array.isArray(answer) && answer.length > 0;
+      case 'switch':
+        // We expect a boolean value (true/false)
+        return typeof answer === 'boolean';
+      case 'slider':
+        return typeof answer === 'number';
+      default:
+        return answer !== undefined && answer !== null && String(answer).trim() !== '';
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+  const handleFieldChange = (field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion((prev) => prev + 1);
+    }
+  };
+
+  const prevQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion((prev) => prev - 1);
     }
   };
 
@@ -94,19 +58,37 @@ const SignupForm: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-
     try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+      // Transform the loosely typed formData into a profile that matches your schema
+      const profile = {
+        // Use the email as the userId for this example (or generate your own)
+        userId: formData.email,
+        firstName: formData.firstName,
+        lastNameInitial: formData.lastNameInitial,
+        email: formData.email,
+        // For multi-select checkboxes, join the array into a comma-separated string if desired.
+        // Alternatively, you can leave them as arrays if your schema expects arrays.
+        lookingFor: Array.isArray(formData.lookingFor)
+          ? formData.lookingFor.join(', ')
+          : formData.lookingFor,
+        // Convert boolean values from SwitchFields to "yes"/"no"
+        kids: formData.kids,
+        zipcode: formData.zipcode,
+        drinking: formData.drinking,
+        hobbies: formData.hobbies || [],
+        availability: formData.availability || [],
+        married: formData.married,
+        // Convert slider value (number) to string
+        ageRange: String(formData.ageRange),
+        friendAgeRange: formData.friendAgeRange,
+        pets: formData.pets,
+        employed: formData.employed,
+        work: formData.work,
+        political: formData.political || '',
+      };
 
-      if (!response.ok) {
-        throw new Error('Failed to sign up');
-      }
+      // Use the Amplify Data client to create the user profile
+      await client.models.UserProfile.create(profile);
       alert('Sign up successful!');
     } catch (err: any) {
       setError(err.message);
@@ -115,267 +97,53 @@ const SignupForm: React.FC = () => {
     }
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <div>
-            <h2>Basic Info</h2>
-            <label>
-              First Name:
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              Last Name Initial:
-              <input
-                type="text"
-                name="lastNameInitial"
-                value={formData.lastNameInitial}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              Email:
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              Password:
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </label>
-          </div>
-        );
-      case 1:
-        return (
-          <div>
-            <h2>Preferences</h2>
-            <label>
-              Looking For:
-              <input
-                type="text"
-                name="lookingFor"
-                value={formData.lookingFor}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              Kids (Yes/No):
-              <input
-                type="text"
-                name="kids"
-                value={formData.kids}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              Zipcode:
-              <input
-                type="text"
-                name="zipcode"
-                value={formData.zipcode}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              Drinking (e.g. Yes/No or frequency):
-              <input
-                type="text"
-                name="drinking"
-                value={formData.drinking}
-                onChange={handleChange}
-              />
-            </label>
-          </div>
-        );
-      case 2:
-        return (
-          <div>
-            <h2>Hobbies & Availability</h2>
-            <label>
-              Hobbies (Select multiple):
-              <div>
-                {['Sports', 'Hiking', 'Yoga', 'Bowling', 'Gaming', 'Cooking', 'Reading', 'Traveling', 'Dancing', 'Music'].map((hobby) => (
-                  <label key={hobby} style={{ marginRight: '10px' }}>
-                    <input
-                      type="checkbox"
-                      name="hobbies"
-                      value={hobby}
-                      checked={formData.hobbies.includes(hobby)}
-                      onChange={() => handleArrayChange('hobbies', hobby)}
-                    />
-                    {hobby}
-                  </label>
-                ))}
-              </div>
-            </label>
-            <br />
-            <label>
-              Availability (Select multiple):
-              <div>
-                {['Weekends', 'Weeknights'].map((slot) => (
-                  <label key={slot} style={{ marginRight: '10px' }}>
-                    <input
-                      type="checkbox"
-                      name="availability"
-                      value={slot}
-                      checked={formData.availability.includes(slot)}
-                      onChange={() => handleArrayChange('availability', slot)}
-                    />
-                    {slot}
-                  </label>
-                ))}
-              </div>
-            </label>
-            <br />
-            <label>
-              Married (Yes/No):
-              <input
-                type="text"
-                name="married"
-                value={formData.married}
-                onChange={handleChange}
-                required
-              />
-            </label>
-          </div>
-        );
-      case 3:
-        return (
-          <div>
-            <h2>Age & Pets</h2>
-            <label>
-              Your Age Range:
-              <input
-                type="text"
-                name="ageRange"
-                value={formData.ageRange}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              Your Age Range of Friends:
-              <input
-                type="text"
-                name="friendAgeRange"
-                value={formData.friendAgeRange}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              Do you have any pets? (Yes/No):
-              <input
-                type="text"
-                name="pets"
-                value={formData.pets}
-                onChange={handleChange}
-                required
-              />
-            </label>
-          </div>
-        );
-      case 4:
-        return (
-          <div>
-            <h2>Employment</h2>
-            <label>
-              Employed (Yes/No):
-              <input
-                type="text"
-                name="employed"
-                value={formData.employed}
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-            <label>
-              What do you do for work?
-              <select name="work" value={formData.work} onChange={handleChange} required>
-                <option value="">Select one</option>
-                {['Technology', 'Education', 'Healthcare', 'Finance', 'Retail', 'Hospitality', 'Manufacturing', 'Other'].map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-        );
-      case 5:
-        return (
-          <div>
-            <h2>Political (Optional)</h2>
-            <label>
-              Political Views (or leave blank if you prefer not to answer):
-              <input
-                type="text"
-                name="political"
-                value={formData.political}
-                onChange={handleChange}
-              />
-            </label>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  const currentQuestionObj: Question = questions[currentQuestion];
+  const currentAnswer = formData[currentQuestionObj.field];
+  const isCurrentAnswerValid = isAnswerValid(currentQuestionObj, currentAnswer);
 
   return (
-    <div>
-      <h1>Sign Up</h1>
-      <ProgressBar currentStep={currentStep} totalSteps={steps.length} />
+    <View as="main" padding="2rem">
+      <Heading level={1}>Sign Up</Heading>
+      <ProgressBar currentStep={currentQuestion + 1} totalSteps={questions.length} />
       <form onSubmit={handleSubmit}>
-        {renderStep()}
-        <div style={{ marginTop: '20px' }}>
-          {currentStep > 0 && (
-            <button type="button" onClick={prevStep}>
+        <QuestionForm
+          question={currentQuestionObj}
+          value={currentAnswer}
+          onChange={handleFieldChange}
+        />
+        <Flex direction="row" gap="1rem" marginTop="20px">
+          {currentQuestion > 0 && (
+            <Button onClick={prevQuestion} variation="primary">
               Back
-            </button>
+            </Button>
           )}
-          {currentStep < steps.length - 1 && (
-            <button type="button" onClick={nextStep}>
+          {currentQuestion < questions.length - 1 && (
+            <Button
+              onClick={nextQuestion}
+              variation="primary"
+              disabled={currentQuestionObj.required && !isCurrentAnswerValid}
+            >
               Next
-            </button>
+            </Button>
           )}
-          {currentStep === steps.length - 1 && (
-            <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Submit'}
-            </button>
+          {currentQuestion === questions.length - 1 && (
+            <Button
+              type="submit"
+              variation="primary"
+              isLoading={isSubmitting}
+              disabled={currentQuestionObj.required && !isCurrentAnswerValid}
+            >
+              Submit
+            </Button>
           )}
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        </Flex>
+        {error && (
+          <Text color="red" marginTop="1rem">
+            {error}
+          </Text>
+        )}
       </form>
-    </div>
+    </View>
   );
 };
 
