@@ -1,7 +1,15 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "../../amplify/data/resource";
+import { generateClient } from 'aws-amplify/data';
+import type { Schema } from '../../amplify/data/resource';
+import {
+  View,
+  Flex,
+  Heading,
+  TextField,
+  Button,
+  Text,
+} from '@aws-amplify/ui-react';
 
 const client = generateClient<Schema>();
 
@@ -52,17 +60,17 @@ const ProfilePage: React.FC = () => {
       const profiles = await client.models.UserProfile.list({
         filter: {
           email: {
-            eq: emailToFetch
-          }
-        }
+            eq: emailToFetch,
+          },
+        },
       });
-  
+
       if (profiles.data.length === 0) {
         throw new Error('Profile not found');
       }
-  
+
       const rawProfile = profiles.data[0];
-  
+
       // Normalize hobbies and availability by filtering out any null values.
       const normalizedProfile: ProfileData = {
         firstName: rawProfile.firstName,
@@ -87,7 +95,7 @@ const ProfilePage: React.FC = () => {
         political: rawProfile.political,
         createdAt: rawProfile.createdAt,
       };
-  
+
       setProfile(normalizedProfile);
     } catch (err: any) {
       setError(err.message);
@@ -105,40 +113,73 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div>
-      <h1>Profile Page</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Enter Email:
-          <input type="email" value={email} onChange={handleEmailChange} required />
-        </label>
-        <button type="submit">Fetch Profile</button>
-      </form>
-      {loading && <p>Loading profile...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {profile && (
-        <div style={{ marginTop: '20px' }}>
-          <h2>
-            {profile.firstName} {profile.lastNameInitial}
-          </h2>
-          <p>Email: {profile.email}</p>
-          <p>Looking For: {profile.lookingFor}</p>
-          <p>Kids: {profile.kids}</p>
-          <p>Zipcode: {profile.zipcode}</p>
-          <p>Drinking: {profile.drinking}</p>
-          <p>Hobbies: {profile.hobbies.join(', ')}</p>
-          <p>Availability: {profile.availability.join(', ')}</p>
-          <p>Married: {profile.married}</p>
-          <p>Age Range: {profile.ageRange}</p>
-          <p>Friend Age Range: {profile.friendAgeRange}</p>
-          <p>Pets: {profile.pets}</p>
-          <p>Employed: {profile.employed}</p>
-          <p>Work: {profile.work}</p>
-          {profile.political && <p>Political Views: {profile.political}</p>}
-          <p>Created At: {profile.createdAt}</p>
-        </div>
-      )}
-    </div>
+    <View padding="1rem">
+      <Flex
+        direction="column"
+        alignItems="center"
+        justifyContent="center"
+        gap="1rem"
+        maxWidth="800px"
+        margin="0 auto"
+      >
+        <Heading level={1}>User Detail Page</Heading>
+        <View
+          as="form"
+          onSubmit={handleSubmit}
+          width="100%"
+          maxWidth={{ base: '90%', medium: '70%' }}
+        >
+          <TextField
+            label="Enter Email"
+            type="email"
+            value={email}
+            onChange={handleEmailChange}
+            required
+            placeholder="example@example.com"
+            labelHidden={false}
+          />
+          <Button type="submit" variation="primary" isLoading={loading}>
+            Fetch Profile
+          </Button>
+        </View>
+        {loading && <Text>Loading profile...</Text>}
+        {error && (
+          <Text color="red" fontWeight="bold">
+            {error}
+          </Text>
+        )}
+        {profile && (
+          <View
+            border="1px solid var(--amplify-colors-neutral-60)"
+            borderRadius="medium"
+            padding="1rem"
+            width="100%"
+            marginTop="1rem"
+          >
+            <Heading level={2}>
+              {profile.firstName} {profile.lastNameInitial}
+            </Heading>
+            <Text>Email: {profile.email}</Text>
+            <Text>Looking For: {profile.lookingFor}</Text>
+            <Text>Kids: {profile.kids}</Text>
+            <Text>Zipcode: {profile.zipcode}</Text>
+            <Text>Drinking: {profile.drinking}</Text>
+            <Text>Hobbies: {profile.hobbies.join(', ')}</Text>
+            <Text>Availability: {profile.availability.join(', ')}</Text>
+            <Text>Married: {profile.married}</Text>
+            <Text>Age Range: {profile.ageRange}</Text>
+            <Text>Friend Age Range: {profile.friendAgeRange}</Text>
+            <Text>Pets: {profile.pets}</Text>
+            <Text>Employed: {profile.employed}</Text>
+            <Text>Work: {profile.work}</Text>
+            {profile.political && (
+              <Text>Political Views: {profile.political}</Text>
+            )}
+            <Text>Created At: {profile.createdAt}</Text>
+          </View>
+        )}
+      </Flex>
+    </View>
   );
 };
 

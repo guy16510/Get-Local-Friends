@@ -21,7 +21,6 @@ export const schema = a.schema({
       kids: a.string().required(),
       zipcode: a.string().required(),
       drinking: a.string().required(),
-      // Replace the old a.array(...) call with a scalar chained with .list()
       hobbies: a.string().array().required(),
       availability: a.string().array().required(),
       married: a.string().required(),
@@ -34,6 +33,7 @@ export const schema = a.schema({
       createdAt: a.datetime(),
       updatedAt: a.datetime(),
     })
+    .secondaryIndexes((index) => [index("zipcode")])
     .authorization((auth) => [auth.publicApiKey()]),
 });
 

@@ -9,11 +9,10 @@ import {
   View,
   Text,
 } from '@aws-amplify/ui-react';
-// import type { Schema } from '../../amplify/data/resource';
-// import { generateClient } from 'aws-amplify/data';
-// Instead of importing from '@aws-amplify/api-rest'
-import { post } from '@aws-amplify/api-rest';
+import type { Schema } from '../../amplify/data/resource';
+import { generateClient } from 'aws-amplify/data';
 
+// Define the UserProfile type (adjust fields as necessary)
 export interface UserProfile {
   userId: string;
   firstName: string;
@@ -27,15 +26,10 @@ export interface UserProfile {
   // add other fields as needed...
 }
 
-// interface SearchResponse {
-//   items: UserProfile[];
-//   totalPages: number;
-// }
+// const PAGE_SIZE = 10;
 
-const PAGE_SIZE = 10;
-
-// Generate the client from your schema; this client is auto-generated to know about your backend functions/models.
-// const client = generateClient<Schema>();
+// Generate the Amplify Data client using your schema
+const client = generateClient<Schema>();
 
 const SearchPage: React.FC = () => {
   // Filter state
@@ -53,56 +47,58 @@ const SearchPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to fetch profiles using the custom search API via the generated client
-// Example inside your fetchProfiles function:
+  // Function to fetch profiles using the generated query method.
+  const fetchProfiles = async (page: number = 1) => {
+    setIsLoading(true);
+    setError(null);
 
+    // Build a filter object using the Amplify Data filter syntax.
+    const filter: Record<string, any> = {};
+    if (zipcode.trim()) {
+      filter.zipcode = { eq: zipcode.trim() };
+    }
+    if (filterKids) {
+      filter.kids = { eq: 'yes' };
+    }
+    if (filterDrinking) {
+      filter.drinking = { eq: 'yes' };
+    }
+    if (filterMarried) {
+      filter.married = { eq: 'yes' };
+    }
+    if (filterPets) {
+      filter.pets = { eq: 'yes' };
+    }
+    if (filterEmployed) {
+      filter.employed = { eq: 'yes' };
+    }
 
-// Inside fetchProfiles:
-const fetchProfiles = async (page: number = 1) => {
-  setIsLoading(true);
-  setError(null);
+    try {
+      // The generated client provides a .list method on your model.
+      const response = await client.models.UserProfile.list({
+        filter,
+        // limit: PAGE_SIZE,
+        // (Optional) Add pagination support using nextToken if desired.
+      });
 
-  // Build filters as before
-  const filters: { [key: string]: string } = {};
-  if (zipcode.trim()) filters.zipcode = zipcode.trim();
-  if (filterKids) filters.kids = 'yes';
-  if (filterDrinking) filters.drinking = 'yes';
-  if (filterMarried) filters.married = 'yes';
-  if (filterPets) filters.pets = 'yes';
-  if (filterEmployed) filters.employed = 'yes';
+      // Default to an empty array if response.items is undefined.
+      setResults(response?.data ?? []);
+      // For now, we assume only one page of results.
+      setTotalPages(1);
+      setCurrentPage(page);
+    } catch (err: any) {
+      setError(err.message || 'Error fetching profiles');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // We need to pass these as query string parameters.
-  // Here, we convert the filters into a query string.
-  const qs = new URLSearchParams({
-    ...filters,
-    page: page.toString(),
-    pageSize: PAGE_SIZE.toString(),
-  }).toString();
-
-  try {
-    // Call your search function endpoint.
-    const response = (await post({
-      apiName: 'UserProfileApi', // This must match your Amplify API configuration name.
-      path: `/search?${qs}`,
-    })) as unknown as { items: any[]; totalPages: number };
-
-    setResults(response.items);
-    setTotalPages(response.totalPages);
-    setCurrentPage(page);
-  } catch (err: any) {
-    setError(err.message || 'Error fetching profiles');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-  // Handler for the search button click
+  // Handler for the Search button
   const handleSearch = () => {
-    // Reset to page 1 and fetch profiles
     fetchProfiles(1);
   };
 
-  // Pagination handlers
+  // Pagination handlers (if you implement pagination in the future)
   const goToPrevPage = () => {
     if (currentPage > 1) {
       fetchProfiles(currentPage - 1);
@@ -154,7 +150,6 @@ const fetchProfiles = async (page: number = 1) => {
             onChange={(e) => setFilterEmployed(e.target.checked)}
           />
         </Flex>
-        {/* Search button to trigger the search */}
         <Button onClick={handleSearch} variation="primary">
           Search
         </Button>
@@ -165,22 +160,37 @@ const fetchProfiles = async (page: number = 1) => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f0f0f0' }}>
             <tr>
-              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Name</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Email</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Zipcode</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Kids</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Married</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Age Range</th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                Name
+              </th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                Email
+              </th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                Zipcode
+              </th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                Kids
+              </th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                Married
+              </th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                Age Range
+              </th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '1rem' }}>
+                <td
+                  colSpan={6}
+                  style={{ textAlign: 'center', padding: '1rem' }}
+                >
                   Loading...
                 </td>
               </tr>
-            ) : results?.length > 0 ? (
+            ) : results && results.length > 0 ? (
               results.map((profile) => (
                 <tr key={profile.userId}>
                   <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
@@ -205,7 +215,10 @@ const fetchProfiles = async (page: number = 1) => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '1rem' }}>
+                <td
+                  colSpan={6}
+                  style={{ textAlign: 'center', padding: '1rem' }}
+                >
                   No profiles found.
                 </td>
               </tr>
