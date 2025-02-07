@@ -1,9 +1,9 @@
 import React from 'react';
-import { UserProfile } from '../types';
+import { GeoUserProfile } from '../types';
 
 interface TableProps {
-  data: UserProfile[];
-  onRowClick: (profile: UserProfile) => void;
+  data: GeoUserProfile[];
+  onRowClick: (profile: GeoUserProfile) => void;
 }
 
 const Table: React.FC<TableProps> = ({ data, onRowClick }) => (

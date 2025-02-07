@@ -1,24 +1,18 @@
-// amplify/functions/userProfile/handler.ts
+// amplify/functions/GeoUserProfile/handler.ts
 import { APIGatewayEvent, Context } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { GeoDataManager, GeoDataManagerConfiguration } from "dynamodb-geo";
 
-const ddbClient = new DynamoDBClient({});  // configure region as needed
+const ddbClient = new DynamoDBClient({ region: "us-east-1" });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const TABLE_NAME = "GeoUserProfileTable";
-// TODO is this deploying??
 
-// Configure GeoDataManager for the geospatial table.
-const geoConfig = new GeoDataManagerConfiguration(
-  ddbDocClient,
-  TABLE_NAME
-);
-// Adjust hashKeyLength if desired.
+const geoConfig = new GeoDataManagerConfiguration(ddbDocClient, TABLE_NAME);
 geoConfig.hashKeyLength = 3;
 const geoDataManager = new GeoDataManager(geoConfig);
 
-type UserProfile = {
+type GeoUserProfile = {
   userId: string;
   firstName: string;
   lastNameInitial: string;
@@ -27,7 +21,6 @@ type UserProfile = {
   kids: boolean;
   zipcode: string;
   drinking: boolean;
-  // New geospatial fields:
   lat: number;
   lng: number;
   hobbies: string[];
@@ -51,6 +44,9 @@ export const handler = async (event: APIGatewayEvent, context: Context) => {
       case "POST":
         return await createProfile(event);
       case "GET":
+        if (event.queryStringParameters?.lat && event.queryStringParameters?.lng) {
+          return await getProfilesWithinRadius(event);
+        }
         return await getProfile(event);
       case "PUT":
         return await updateProfile(event);
@@ -66,9 +62,8 @@ export const handler = async (event: APIGatewayEvent, context: Context) => {
 async function createProfile(event: APIGatewayEvent) {
   if (!event.body) return errorResponse(400, "Missing request body");
 
-  const profile: UserProfile = JSON.parse(event.body);
-  
-  // Ensure required geospatial fields exist.
+  const profile: GeoUserProfile = JSON.parse(event.body);
+
   if (profile.lat === undefined || profile.lng === undefined) {
     return errorResponse(400, "Missing latitude or longitude");
   }
@@ -76,18 +71,14 @@ async function createProfile(event: APIGatewayEvent) {
   profile.createdAt = new Date().toISOString();
   profile.updatedAt = profile.createdAt;
 
-  // Prepare input for the GeoDataManager.
   const putPointInput = {
-    // The RangeKeyValue is used as the sort key. In this example, we use userId.
     RangeKeyValue: { S: profile.userId },
-    // GeoDataManager needs the latitude and longitude.
     GeoPoint: {
       latitude: profile.lat,
       longitude: profile.lng,
     },
     PutItemInput: {
       TableName: TABLE_NAME,
-      // Cast the profile as any so that it satisfies the PutItemInputAttributeMap type.
       Item: profile as any,
     },
   };
@@ -98,11 +89,78 @@ async function createProfile(event: APIGatewayEvent) {
 }
 
 async function getProfile(event: APIGatewayEvent) {
-  // Your existing implementation...
+  if (!event.queryStringParameters || !event.queryStringParameters.userId) {
+    return errorResponse(400, "Missing userId");
+  }
+
+  const userId = event.queryStringParameters.userId;
+
+  try {
+    const result = await ddbDocClient.send(
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: { userId },
+      })
+    );
+
+    if (!result.Item) {
+      return errorResponse(404, "Profile not found");
+    }
+
+    return successResponse(200, result.Item);
+  } catch (error) {
+    console.error("Error getting profile:", error);
+    return errorResponse(500, "Error retrieving profile");
+  }
+}
+
+async function getProfilesWithinRadius(event: APIGatewayEvent) {
+  const { lat, lng, distance = "5", unit = "km" } = event.queryStringParameters || {};
+
+  const latitude = parseFloat(lat || "0");
+  const longitude = parseFloat(lng || "0");
+  const distanceInMeters = unit === "mi" ? parseFloat(distance) * 1609.34 : parseFloat(distance) * 1000;
+
+  try {
+    const result = await geoDataManager.queryRadius({
+      RadiusInMeter: distanceInMeters,
+      CenterPoint: { latitude, longitude },
+    });
+
+    return successResponse(200, result);
+  } catch (error) {
+    console.error("Error getting profiles within radius:", error);
+    return errorResponse(500, "Error retrieving profiles");
+  }
 }
 
 async function updateProfile(event: APIGatewayEvent) {
-  // Your existing implementation...
+  if (!event.body) return errorResponse(400, "Missing request body");
+
+  const profile: GeoUserProfile = JSON.parse(event.body);
+
+  if (!profile.userId) {
+    return errorResponse(400, "Missing userId");
+  }
+
+  profile.updatedAt = new Date().toISOString();
+
+  const updateParams = {
+    TableName: TABLE_NAME,
+    Key: { userId: profile.userId },
+    UpdateExpression: "set #updatedAt = :updatedAt",
+    ExpressionAttributeNames: {
+      "#updatedAt": "updatedAt",
+    },
+    ExpressionAttributeValues: {
+      ":updatedAt": profile.updatedAt,
+    },
+    ReturnValues: "UPDATED_NEW" as const,
+  };
+
+  await ddbDocClient.send(new UpdateCommand(updateParams));
+
+  return successResponse(200, profile);
 }
 
 function successResponse(statusCode: number, data: any) {

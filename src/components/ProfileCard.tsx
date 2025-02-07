@@ -1,10 +1,10 @@
 import React from 'react';
-import { UserProfile } from '../types';
+import { GeoUserProfile } from '../types';
 import { View, Flex, Heading, Text} from '@aws-amplify/ui-react';
 
 
 interface ProfileCardProps {
-  profile: UserProfile;
+  profile: GeoUserProfile;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => (

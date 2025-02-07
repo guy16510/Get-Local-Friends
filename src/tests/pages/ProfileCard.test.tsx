@@ -1,9 +1,9 @@
 // import React from 'react';
 // import { render, screen } from '@testing-library/react';
 // import ProfileCard from '../../components/ProfileCard';
-// import { UserProfile } from '../../types';
+// import { GeoUserProfile } from '../../types';
 
-// const mockProfile: UserProfile = {
+// const mockProfile: GeoUserProfile = {
 //   userId: '1',
 //   firstName: 'John',
 //   lastNameInitial: 'D',

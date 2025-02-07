@@ -11,7 +11,7 @@ export const schema = a.schema({
     })
     .authorization((auth) => [auth.publicApiKey()]),
 
-  UserProfile: a
+  GeoUserProfile: a
     .model({
       id: a.id(),
       userId: a.string().required(),

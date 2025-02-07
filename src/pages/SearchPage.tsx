@@ -12,7 +12,7 @@ import {
   Loader,
 } from '@aws-amplify/ui-react';
 import { useNavigate } from 'react-router-dom';
-import { UserProfile } from '../types';
+import { GeoUserProfile } from '../types';
 // import type { Schema } from '../../amplify/data/resource';
 // import { generateClient } from 'aws-amplify/data';
 
@@ -74,7 +74,7 @@ const SearchPage: React.FC = () => {
   const [filterEmployed, setFilterEmployed] = useState<boolean>(false);
 
   // Results, pagination, and error state.
-  const [results, setResults] = useState<UserProfile[]>([]);
+  const [results, setResults] = useState<GeoUserProfile[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [nextToken, setNextToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -151,7 +151,7 @@ const SearchPage: React.FC = () => {
   }, [error]);
 
   // Helper: apply extra filters on the client side.
-  const applyExtraFilters = (items: UserProfile[]): UserProfile[] => {
+  const applyExtraFilters = (items: GeoUserProfile[]): GeoUserProfile[] => {
     let filtered = items;
     if (filterKids) filtered = filtered.filter((item) => item.kids === 'yes');
     if (filterDrinking) filtered = filtered.filter((item) => item.drinking === 'yes');
@@ -213,10 +213,10 @@ const SearchPage: React.FC = () => {
       }
 
       // Cast the response to our custom GeoQueryResult interface.
-      const geoResponse = (await geoDataManager.queryRadius(radiusQueryInput)) as unknown as GeoQueryResult<UserProfile>;
+      const geoResponse = (await geoDataManager.queryRadius(radiusQueryInput)) as unknown as GeoQueryResult<GeoUserProfile>;
       setNextToken(geoResponse.nextToken || null);
 
-      const newItems: UserProfile[] = geoResponse.items;
+      const newItems: GeoUserProfile[] = geoResponse.items;
       const filteredItems = applyExtraFilters(newItems);
 
       setResults((prev) => (page === 1 ? filteredItems : [...prev, ...filteredItems]));
@@ -248,7 +248,7 @@ const SearchPage: React.FC = () => {
   };
 
   // Navigate to ProfilePage with selected profile.
-  const handleRowClick = (profile: UserProfile) => {
+  const handleRowClick = (profile: GeoUserProfile) => {
     navigate('/profile', { state: { profile } });
   };
 

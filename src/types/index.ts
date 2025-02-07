@@ -1,4 +1,4 @@
-export interface UserProfile {
+export interface GeoUserProfile {
   id: string | null;
   userId: string;
   firstName: string;

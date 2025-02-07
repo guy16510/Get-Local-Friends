@@ -88,7 +88,7 @@ const SignupForm: React.FC = () => {
       // };
 
       // Use the Amplify Data client to create the user profile
-      // await client.models.UserProfile.create(profile);
+      // await client.models.GeoUserProfile.create(profile);
       alert('Sign up successful!');
     } catch (err: any) {
       setError(err.message);

@@ -1,11 +1,11 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import ProfileCard from '../components/ProfileCard';
-import { UserProfile } from '../types';
+import { GeoUserProfile } from '../types';
 
 const ProfilePage: React.FC = () => {
   const location = useLocation();
-  const profile = location.state as UserProfile;
+  const profile = location.state as GeoUserProfile;
 
   return (
     <div style={{ padding: '2rem' }}>
