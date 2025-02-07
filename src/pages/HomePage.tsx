@@ -119,14 +119,14 @@ const HomePage: React.FC = () => {
             alignItems="center"
           >
             <Image
-              src="public/girlsNight.jpg"
+              src="/girlsNight.jpg"
               alt="Group of friends"
               width="45%"
               borderRadius="50%"
               objectFit="cover"
             />
             <Image
-              src="public/girlsNight2.jpg"
+              src="/girlsNight2.jpg"
               alt="Couple"
               width="45%"
               borderRadius="50%"

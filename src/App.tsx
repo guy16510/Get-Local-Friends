@@ -5,11 +5,12 @@ import { ThemeProvider } from '@aws-amplify/ui-react';
 import theme from './theme';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
-import SignupForm from './components/SignupForm';
+import SignupForm from './pages/SignupForm';
 import ContactUs from './pages/ContactUs';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import Footer from './components/Footer';
+
 
 const App: React.FC = () => {
   const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');

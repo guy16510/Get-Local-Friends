@@ -1,24 +1,25 @@
-export interface GeoUserProfile {
-  id: string | null;
+// src/types/index.ts
+// This matches your Amplify Data model EXACTLY:
+export type GeoUserProfile = {
   userId: string;
   firstName: string;
   lastNameInitial: string;
   email: string;
-  lookingFor: string;
-  kids: string;
+  lookingFor: string;    // stored as a single string (CSV if multi-check)
+  kids: boolean;
   zipcode: string;
-  drinking: string;
+  drinking: boolean;
   lat: number;
   lng: number;
-  hobbies: (string | null)[];
-  availability: (string | null)[];
-  married: string | null;
-  ageRange: string;
-  friendAgeRange: string;
-  pets: string;
-  employed: string;
+  hobbies: string[];     // stored as actual string array
+  availability: string[]; 
+  married: boolean;
+  ageRange: string;      // single selection
+  friendAgeRange: string; // stored as a single string (CSV if multi-check)
+  pets: boolean;
+  employed: boolean;
   work: string;
-  political?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-}
+  political?: string;    
+  createdAt?: string;
+  updatedAt?: string;
+};

@@ -19,25 +19,28 @@ export const schema = a.schema({
       lastNameInitial: a.string().required(),
       email: a.string().required(),
       lookingFor: a.string().required(),
-      kids: a.string().required(),
+      kids: a.boolean().required(),
       zipcode: a.string().required(),
-      drinking: a.string().required(),
+      drinking: a.boolean().required(),
       lat: a.float().required(),
       lng: a.float().required(),
       hobbies: a.string().array().required(),
       availability: a.string().array().required(),
-      married: a.string().required(),
+      married: a.boolean().required(),
       ageRange: a.string().required(),
       friendAgeRange: a.string().required(),
-      pets: a.string().required(),
-      employed: a.string().required(),
+      pets: a.boolean().required(),
+      employed: a.boolean().required(),
       work: a.string().required(),
       political: a.string(),
       createdAt: a.datetime(),
       updatedAt: a.datetime(),
     })
     .secondaryIndexes((index) => [index("zipcode")])
-    .authorization((auth) => [auth.publicApiKey()]),
+    .authorization((auth) => [
+      auth.publicApiKey(),
+      auth.authenticated().to(['read']) // Grant read access to authenticated users
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

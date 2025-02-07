@@ -4,7 +4,6 @@ import {
   Flex,
   View,
   Text,
-  Image,
   useTheme,
 } from '@aws-amplify/ui-react';
 import '../index.css';
@@ -67,7 +66,7 @@ const Footer: React.FC = () => {
         <Flex className="footer-apps" direction="column" gap="1rem" flex="1">
           <Text>Download Our App</Text>
           <Flex className="store-badges" gap="1rem">
-            <Image
+            {/* <Image
               src="https://via.placeholder.com/150x50?text=Google+Play"
               alt="Google Play"
               width="150px"
@@ -78,7 +77,7 @@ const Footer: React.FC = () => {
               alt="App Store"
               width="150px"
               style={{ cursor: 'pointer' }}
-            />
+            /> */}
           </Flex>
         </Flex>
       </Flex>

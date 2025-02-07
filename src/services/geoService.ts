@@ -1,15 +1,28 @@
-import { GeoDataManager, GeoDataManagerConfiguration } from 'dynamodb-geo';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { useState } from 'react';
 
-const ddbClient = new DynamoDBClient({ region: 'us-east-1' });
-const geoConfig = new GeoDataManagerConfiguration(ddbClient, 'GeoUserProfileTable');
-geoConfig.hashKeyLength = 3;
+export const useGeoLocation = () => {
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-const geoDataManager = new GeoDataManager(geoConfig);
+  const getLocation = () => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLocation({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          });
+          setError(null);
+        },
+        (err) => {
+          setError(err?.message || 'Unable to retrieve location');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      setError('Geolocation not supported');
+    }
+  };
 
-export const searchProfiles = async (lat: number, lng: number, radius: number) => {
-  return geoDataManager.queryRadius({
-    RadiusInMeter: radius,
-    CenterPoint: { latitude: lat, longitude: lng },
-  });
+  return { location, getLocation, error };
 };
