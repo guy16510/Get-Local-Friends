@@ -99,7 +99,7 @@ const SignupForm: React.FC = () => {
       // - number for lat, lng
       // - optional string for political
 
-      const finalProfile: GeoUserProfile = {
+      const finalProfile: any = {
         userId: formData.email || '', // Or however you generate userId
         firstName: formData.firstName || '',
         lastNameInitial: formData.lastNameInitial || '',

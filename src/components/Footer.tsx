@@ -28,9 +28,9 @@ const Footer: React.FC = () => {
       >
         <Flex className="footer-branding" direction="column" gap="1rem" flex="1">
           <Text className="logo" fontWeight="bold" fontSize="1.5rem" color="#fff">
-            ISOTOPE
+            Get Local Friends
           </Text>
-          <Text>© 2023 Isotope Inc.</Text>
+          <Text>© 2023 Get Local Friends Inc.</Text>
         </Flex>
 
         <View className="footer-links" flex="1">
@@ -64,7 +64,7 @@ const Footer: React.FC = () => {
         </View>
 
         <Flex className="footer-apps" direction="column" gap="1rem" flex="1">
-          <Text>Download Our App</Text>
+          {/* <Text>Download Our App</Text> */}
           <Flex className="store-badges" gap="1rem">
             {/* <Image
               src="https://via.placeholder.com/150x50?text=Google+Play"
@@ -84,10 +84,10 @@ const Footer: React.FC = () => {
 
       <View className="footer-bottom" textAlign="center" marginTop="2rem">
         <Text fontSize="0.85rem" color="#aaa">
-          2023 Isotope App, LLC. All Rights Reserved.
+          2025 Get Local Friends. All Rights Reserved.
         </Text>
         <Text fontSize="0.85rem" color="#aaa">
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Place for disclaimers,
+          Place for disclaimers,
           trademark notices, etc.
         </Text>
       </View>

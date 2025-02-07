@@ -11,7 +11,7 @@ export const schema = a.schema({
     })
     .authorization((auth) => [auth.publicApiKey()]),
 
-  GeoUserProfile: a
+    GeoUserProfile: a
     .model({
       id: a.id(),
       userId: a.string().required(),
@@ -22,6 +22,8 @@ export const schema = a.schema({
       kids: a.boolean().required(),
       zipcode: a.string().required(),
       drinking: a.boolean().required(),
+      geohash: a.string().required(),
+      rangeKey: a.string().required(),
       lat: a.float().required(),
       lng: a.float().required(),
       hobbies: a.string().array().required(),
@@ -30,13 +32,7 @@ export const schema = a.schema({
       ageRange: a.string().required(),
       friendAgeRange: a.string().required(),
       pets: a.boolean().required(),
-      employed: a.boolean().required(),
-      work: a.string().required(),
-      political: a.string(),
-      createdAt: a.datetime(),
-      updatedAt: a.datetime(),
     })
-    .secondaryIndexes((index) => [index("zipcode")])
     .authorization((auth) => [
       auth.publicApiKey(),
       auth.authenticated().to(['read']) // Grant read access to authenticated users

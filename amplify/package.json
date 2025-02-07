@@ -1,3 +1,6 @@
 {
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@types/ngeohash": "^0.6.8"
+  }
 }

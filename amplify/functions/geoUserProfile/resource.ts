@@ -5,4 +5,3 @@ export const GeoUserProfileFunction = defineFunction({
   entry: "./handler.ts"
 });
 
-

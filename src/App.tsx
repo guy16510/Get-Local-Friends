@@ -1,7 +1,7 @@
-// src/App.tsx
+// Updated App.tsx to fix HeaderProps error
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from '@aws-amplify/ui-react';
+import { ThemeProvider, Authenticator } from '@aws-amplify/ui-react';
 import theme from './theme';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
@@ -10,7 +10,7 @@ import ContactUs from './pages/ContactUs';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import Footer from './components/Footer';
-
+import LoginPage from './pages/LoginPage';
 
 const App: React.FC = () => {
   const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
@@ -26,10 +26,32 @@ const App: React.FC = () => {
         <Header colorMode={colorMode} setColorMode={setColorMode} />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/signup" element={<SignupForm />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/signup"
+            element={
+              <Authenticator>
+                <SignupForm />
+              </Authenticator>
+            }
+          />
           <Route path="/contact" element={<ContactUs />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/search" element={<SearchPage />} />
+          <Route
+            path="/profile"
+            element={
+              <Authenticator>
+                <ProfilePage />
+              </Authenticator>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <Authenticator>
+                <SearchPage />
+              </Authenticator>
+            }
+          />
         </Routes>
         <Footer />
       </Router>

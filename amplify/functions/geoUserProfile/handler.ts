@@ -3,6 +3,7 @@ import { APIGatewayEvent, Context } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { GeoDataManager, GeoDataManagerConfiguration } from "dynamodb-geo";
+import * as geohash from "ngeohash";
 
 const ddbClient = new DynamoDBClient({ region: "us-east-1" });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
@@ -34,6 +35,8 @@ type GeoUserProfile = {
   political?: string;
   createdAt?: string;
   updatedAt?: string;
+  geohash?: string;
+  rangeKey?: string;
 };
 
 export const handler = async (event: APIGatewayEvent, context: Context) => {
@@ -70,6 +73,8 @@ async function createProfile(event: APIGatewayEvent) {
 
   profile.createdAt = new Date().toISOString();
   profile.updatedAt = profile.createdAt;
+  profile.geohash = geohash.encode(profile.lat, profile.lng);
+  profile.rangeKey = profile.userId;
 
   const putPointInput = {
     RangeKeyValue: { S: profile.userId },
@@ -144,16 +149,19 @@ async function updateProfile(event: APIGatewayEvent) {
   }
 
   profile.updatedAt = new Date().toISOString();
+  profile.geohash = geohash.encode(profile.lat, profile.lng);
 
   const updateParams = {
     TableName: TABLE_NAME,
     Key: { userId: profile.userId },
-    UpdateExpression: "set #updatedAt = :updatedAt",
+    UpdateExpression: "set #updatedAt = :updatedAt, #geohash = :geohash",
     ExpressionAttributeNames: {
       "#updatedAt": "updatedAt",
+      "#geohash": "geohash",
     },
     ExpressionAttributeValues: {
       ":updatedAt": profile.updatedAt,
+      ":geohash": profile.geohash,
     },
     ReturnValues: "UPDATED_NEW" as const,
   };

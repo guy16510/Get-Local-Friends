@@ -49,7 +49,7 @@ const SearchPage: React.FC = () => {
           credentials: {
             accessKeyId: credentials?.accessKeyId || '',
             secretAccessKey: credentials?.secretAccessKey || '',
-            sessionToken: credentials?.sessionToken || '',
+            sessionToken: credentials?.sessionToken || ''
           },
         });
         setDdbClient(client);
@@ -75,14 +75,13 @@ const SearchPage: React.FC = () => {
       geoConfig.hashKeyLength = 3;
       const geoDataManager = new GeoDataManager(geoConfig);
 
-      const geoResponse = await geoDataManager.queryRadius({
+      const geoResponse:any = await geoDataManager.queryRadius({
         RadiusInMeter: parseFloat(radius),
         CenterPoint: { latitude: parseFloat(latitude), longitude: parseFloat(longitude) },
         // Limit: PAGE_SIZE,
       });
-      console.log(geoResponse);
-      setResults([])
-      // setResults(geoResponse?.items || []);
+      debugger;
+      setResults(geoResponse.items);
     } catch (err: any) {
       setError(err.message || 'Error fetching profiles');
     } finally {

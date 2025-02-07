@@ -1,7 +1,7 @@
 import { createTheme, defaultDarkModeOverride } from '@aws-amplify/ui-react';
 
 const theme = createTheme({
-  name: 'IsotopeTheme',
+  name: 'Get Local FriendsTheme',
   tokens: {
     colors: {
       font: {

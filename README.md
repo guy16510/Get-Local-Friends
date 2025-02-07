@@ -53,3 +53,13 @@ For detailed instructions on deploying your application, refer to the [deploymen
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issues) for more information on security practices.
 
+
+
+## TODOS
+- In progress - IAM policy for GeoSpatial Query
+- Next
+    - redesign search / profile
+    - add recaptcha to contact us
+    - redesign signup form
+    - add chat
+    
