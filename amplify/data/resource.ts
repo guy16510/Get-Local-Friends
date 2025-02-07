@@ -1,3 +1,4 @@
+// amplify/data/resource.ts
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
 export const schema = a.schema({
@@ -21,6 +22,9 @@ export const schema = a.schema({
       kids: a.string().required(),
       zipcode: a.string().required(),
       drinking: a.string().required(),
+      // NEW geospatial fields:
+      lat: a.float().required(),
+      lng: a.float().required(),
       hobbies: a.string().array().required(),
       availability: a.string().array().required(),
       married: a.string().required(),

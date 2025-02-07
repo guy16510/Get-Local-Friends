@@ -1,25 +1,35 @@
-import { defaultDarkModeOverride } from '@aws-amplify/ui-react';
+import { createTheme, defaultDarkModeOverride } from '@aws-amplify/ui-react';
 
-const theme = {
-  name: 'classic-theme',
-  primaryColor: 'blue',
-  secondaryColor: 'neutral',
+const theme = createTheme({
+  name: 'IsotopeTheme',
   tokens: {
     colors: {
-      border: {
-        primary: { value: '{colors.neutral.40}' },
-        secondary: { value: '{colors.neutral.20}' },
-        tertiary: { value: '{colors.neutral.10}' },
+      font: {
+        primary: { value: '#333333' },
+      },
+      background: {
+        primary: { value: '#ffffff' },   // Light mode background
+        secondary: { value: '#f8f8f8' }, // Light mode alt BG
+      },
+      brand: {
+        primary: { value: '#000' },
+        accent: { value: '#ff0055' },
       },
     },
-    radii: {
-      small: { value: '2px' },
-      medium: { value: '2px' },
-      large: { value: '4px' },
-      xl: { value: '6px' },
+    components: {
+      // Example override for Button "primary"
+      button: {
+        primary: {
+          backgroundColor: { value: '{colors.brand.accent}' },
+          color: { value: '#fff' },
+          _hover: {
+            backgroundColor: { value: '#e0004c' },
+          },
+        },
+      },
     },
   },
   overrides: [defaultDarkModeOverride],
-};
+});
 
 export default theme;

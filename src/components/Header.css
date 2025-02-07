@@ -17,6 +17,11 @@
   margin-top: 1rem;
 }
 
+
+/* .header{
+  background-color: rgb(216,218,218)!important;
+} */
+
 @media (max-width: 768px) {
   .nav-links {
     display: none !important;

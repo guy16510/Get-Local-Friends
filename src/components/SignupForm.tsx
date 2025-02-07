@@ -4,10 +4,10 @@ import { Button, Flex, Heading, View, Text } from '@aws-amplify/ui-react';
 import QuestionForm from './QuestionForm';
 import { questions, Question } from '../data/questions';
 import ProgressBar from './ProgressBar';
-import type { Schema } from '../../amplify/data/resource';
-import { generateClient } from 'aws-amplify/data';
+// import type { Schema } from '../../amplify/data/resource';
+// import { generateClient } from 'aws-amplify/data';
 
-const client = generateClient<Schema>();
+// const client = generateClient<Schema>();
 
 interface FormData {
   [key: string]: any;
@@ -60,35 +60,35 @@ const SignupForm: React.FC = () => {
     setError(null);
     try {
       // Transform the loosely typed formData into a profile that matches your schema
-      const profile = {
-        // Use the email as the userId for this example (or generate your own)
-        userId: formData.email,
-        firstName: formData.firstName,
-        lastNameInitial: formData.lastNameInitial,
-        email: formData.email,
-        // For multi-select checkboxes, join the array into a comma-separated string if desired.
-        // Alternatively, you can leave them as arrays if your schema expects arrays.
-        lookingFor: Array.isArray(formData.lookingFor)
-          ? formData.lookingFor.join(', ')
-          : formData.lookingFor,
-        // Convert boolean values from SwitchFields to "yes"/"no"
-        kids: formData.kids,
-        zipcode: formData.zipcode,
-        drinking: formData.drinking,
-        hobbies: formData.hobbies || [],
-        availability: formData.availability || [],
-        married: formData.married,
-        // Convert slider value (number) to string
-        ageRange: String(formData.ageRange),
-        friendAgeRange: formData.friendAgeRange,
-        pets: formData.pets,
-        employed: formData.employed,
-        work: formData.work,
-        political: formData.political || '',
-      };
+      // const profile = {
+      //   // Use the email as the userId for this example (or generate your own)
+      //   userId: formData.email,
+      //   firstName: formData.firstName,
+      //   lastNameInitial: formData.lastNameInitial,
+      //   email: formData.email,
+      //   // For multi-select checkboxes, join the array into a comma-separated string if desired.
+      //   // Alternatively, you can leave them as arrays if your schema expects arrays.
+      //   lookingFor: Array.isArray(formData.lookingFor)
+      //     ? formData.lookingFor.join(', ')
+      //     : formData.lookingFor,
+      //   // Convert boolean values from SwitchFields to "yes"/"no"
+      //   kids: formData.kids,
+      //   zipcode: formData.zipcode,
+      //   drinking: formData.drinking,
+      //   hobbies: formData.hobbies || [],
+      //   availability: formData.availability || [],
+      //   married: formData.married,
+      //   // Convert slider value (number) to string
+      //   ageRange: String(formData.ageRange),
+      //   friendAgeRange: formData.friendAgeRange,
+      //   pets: formData.pets,
+      //   employed: formData.employed,
+      //   work: formData.work,
+      //   political: formData.political || '',
+      // };
 
       // Use the Amplify Data client to create the user profile
-      await client.models.UserProfile.create(profile);
+      // await client.models.UserProfile.create(profile);
       alert('Sign up successful!');
     } catch (err: any) {
       setError(err.message);

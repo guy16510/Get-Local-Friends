@@ -1,19 +1,13 @@
-import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+// src/components/ProfilePage.tsx
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
-import {
-  View,
-  Flex,
-  Heading,
-  TextField,
-  Button,
-  Text,
-} from '@aws-amplify/ui-react';
+import { View, Flex, Heading, TextField, Button, Text, Message, Loader } from '@aws-amplify/ui-react';
 
 const client = generateClient<Schema>();
 
-interface ProfileData {
+export interface ProfileData {
   firstName: string;
   lastNameInitial: string;
   email: string;
@@ -23,7 +17,7 @@ interface ProfileData {
   drinking: string;
   hobbies: (string | null)[];
   availability: (string | null)[];
-  married: string;
+  married: string | null;
   ageRange: string;
   friendAgeRange: string;
   pets: string;
@@ -34,44 +28,33 @@ interface ProfileData {
 }
 
 const ProfilePage: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const location = useLocation();
+  const passedProfile = location.state?.profile as ProfileData | undefined;
+  const [profile, setProfile] = useState<ProfileData | null>(passedProfile || null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState<string>('');
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    // If there is an email query parameter, set it and fetch the profile.
-    const emailQuery = searchParams.get('email');
-    if (emailQuery) {
+    if (!profile && searchParams.get('email')) {
+      const emailQuery = searchParams.get('email')!;
       setEmail(emailQuery);
       fetchProfile(emailQuery);
     }
-  }, [searchParams]);
-
-  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-  };
+  }, [searchParams, profile]);
 
   const fetchProfile = async (emailToFetch: string) => {
     setLoading(true);
     setError(null);
     try {
       const profiles = await client.models.UserProfile.list({
-        filter: {
-          email: {
-            eq: emailToFetch,
-          },
-        },
+        filter: { email: { eq: emailToFetch } },
       });
-
       if (profiles.data.length === 0) {
         throw new Error('Profile not found');
       }
-
       const rawProfile = profiles.data[0];
-
-      // Normalize hobbies and availability by filtering out any null values.
       const normalizedProfile: ProfileData = {
         firstName: rawProfile.firstName,
         lastNameInitial: rawProfile.lastNameInitial,
@@ -80,12 +63,8 @@ const ProfilePage: React.FC = () => {
         kids: rawProfile.kids,
         zipcode: rawProfile.zipcode,
         drinking: rawProfile.drinking,
-        hobbies: (rawProfile.hobbies || []).filter(
-          (item): item is string => item !== null
-        ),
-        availability: (rawProfile.availability || []).filter(
-          (item): item is string => item !== null
-        ),
+        hobbies: (rawProfile.hobbies || []).filter((item): item is string => item !== null),
+        availability: (rawProfile.availability || []).filter((item): item is string => item !== null),
         married: rawProfile.married,
         ageRange: rawProfile.ageRange,
         friendAgeRange: rawProfile.friendAgeRange,
@@ -95,67 +74,39 @@ const ProfilePage: React.FC = () => {
         political: rawProfile.political,
         createdAt: rawProfile.createdAt,
       };
-
       setProfile(normalizedProfile);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Error fetching profile');
       setProfile(null);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     fetchProfile(email);
-    // update the URL query string for bookmarking/sharing
     setSearchParams({ email });
   };
 
   return (
     <View padding="1rem">
-      <Flex
-        direction="column"
-        alignItems="center"
-        justifyContent="center"
-        gap="1rem"
-        maxWidth="800px"
-        margin="0 auto"
-      >
+      <Flex direction="column" alignItems="center" justifyContent="center" gap="1rem" maxWidth="800px" margin="0 auto">
         <Heading level={1}>User Detail Page</Heading>
-        <View
-          as="form"
-          onSubmit={handleSubmit}
-          width="100%"
-          maxWidth={{ base: '90%', medium: '70%' }}
-        >
-          <TextField
-            label="Enter Email"
-            type="email"
-            value={email}
-            onChange={handleEmailChange}
-            required
-            placeholder="example@example.com"
-            labelHidden={false}
-          />
+        <View as="form" onSubmit={handleSubmit} width="100%" maxWidth={{ base: '90%', medium: '70%' }}>
+          <TextField label="Enter Email" type="email" value={email} onChange={handleEmailChange} required placeholder="example@example.com" />
           <Button type="submit" variation="primary" isLoading={loading}>
             Fetch Profile
           </Button>
         </View>
-        {loading && <Text>Loading profile...</Text>}
-        {error && (
-          <Text color="red" fontWeight="bold">
-            {error}
-          </Text>
-        )}
+        {loading && <Loader variation="linear" ariaLabel="Loading profile..." style={{ width: '100%', height: '4rem' }} />}
+        {error && <Message variation="filled" className="error-message">{error}</Message>}
         {profile && (
-          <View
-            border="1px solid var(--amplify-colors-neutral-60)"
-            borderRadius="medium"
-            padding="1rem"
-            width="100%"
-            marginTop="1rem"
-          >
+          <View border="1px solid var(--amplify-colors-neutral-60)" borderRadius="medium" padding="1rem" width="100%" marginTop="1rem">
             <Heading level={2}>
               {profile.firstName} {profile.lastNameInitial}
             </Heading>
@@ -172,9 +123,7 @@ const ProfilePage: React.FC = () => {
             <Text>Pets: {profile.pets}</Text>
             <Text>Employed: {profile.employed}</Text>
             <Text>Work: {profile.work}</Text>
-            {profile.political && (
-              <Text>Political Views: {profile.political}</Text>
-            )}
+            {profile.political && <Text>Political Views: {profile.political}</Text>}
             <Text>Created At: {profile.createdAt}</Text>
           </View>
         )}

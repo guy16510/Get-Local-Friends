@@ -1,10 +1,21 @@
+// amplify/functions/userProfile/handler.ts
 import { APIGatewayEvent, Context } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { GeoDataManager, GeoDataManagerConfiguration } from "dynamodb-geo";
 
-const ddbClient = new DynamoDBClient({});
+const ddbClient = new DynamoDBClient({});  // configure region as needed
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
-const TABLE_NAME = process.env.USER_PROFILE_TABLE_NAME || "UserProfileTable";
+const TABLE_NAME = process.env.USER_PROFILE_TABLE_NAME || "GeoUserProfileTable";
+
+// Configure GeoDataManager for the geospatial table.
+const geoConfig = new GeoDataManagerConfiguration(
+  ddbDocClient,
+  TABLE_NAME
+);
+// Adjust hashKeyLength if desired.
+geoConfig.hashKeyLength = 3;
+const geoDataManager = new GeoDataManager(geoConfig);
 
 type UserProfile = {
   userId: string;
@@ -15,6 +26,9 @@ type UserProfile = {
   kids: boolean;
   zipcode: string;
   drinking: boolean;
+  // New geospatial fields:
+  lat: number;
+  lng: number;
   hobbies: string[];
   availability: string[];
   married: boolean;
@@ -52,69 +66,42 @@ async function createProfile(event: APIGatewayEvent) {
   if (!event.body) return errorResponse(400, "Missing request body");
 
   const profile: UserProfile = JSON.parse(event.body);
+  
+  // Ensure required geospatial fields exist.
+  if (profile.lat === undefined || profile.lng === undefined) {
+    return errorResponse(400, "Missing latitude or longitude");
+  }
+
   profile.createdAt = new Date().toISOString();
   profile.updatedAt = profile.createdAt;
 
-  await ddbDocClient.send(
-    new PutCommand({
+  // Prepare input for the GeoDataManager.
+  const putPointInput = {
+    // The RangeKeyValue is used as the sort key. In this example, we use userId.
+    RangeKeyValue: { S: profile.userId },
+    // GeoDataManager needs the latitude and longitude.
+    GeoPoint: {
+      latitude: profile.lat,
+      longitude: profile.lng,
+    },
+    PutItemInput: {
       TableName: TABLE_NAME,
-      Item: profile,
-    })
-  );
+      // Cast the profile as any so that it satisfies the PutItemInputAttributeMap type.
+      Item: profile as any,
+    },
+  };
+
+  await geoDataManager.putPoint(putPointInput);
 
   return successResponse(201, profile);
 }
 
 async function getProfile(event: APIGatewayEvent) {
-  const userId = event.pathParameters?.userId;
-  if (!userId) return errorResponse(400, "Missing userId");
-
-  const result = await ddbDocClient.send(
-    new GetCommand({
-      TableName: TABLE_NAME,
-      Key: { userId },
-    })
-  );
-
-  if (!result.Item) return errorResponse(404, "Profile not found");
-  return successResponse(200, result.Item);
+  // Your existing implementation...
 }
 
 async function updateProfile(event: APIGatewayEvent) {
-  const userId = event.pathParameters?.userId;
-  if (!userId) return errorResponse(400, "Missing userId");
-
-  if (!event.body) return errorResponse(400, "Missing request body");
-
-  const updates: Partial<UserProfile> = JSON.parse(event.body);
-  updates.updatedAt = new Date().toISOString();
-
-  const updateExpressionParts: string[] = [];
-  const expressionAttributeNames: Record<string, string> = {};
-  const expressionAttributeValues: Record<string, any> = {};
-
-  Object.keys(updates).forEach((key, index) => {
-    const attrName = `#attr${index}`;
-    const attrValue = `:val${index}`;
-    updateExpressionParts.push(`${attrName} = ${attrValue}`);
-    expressionAttributeNames[attrName] = key;
-    expressionAttributeValues[attrValue] = updates[key as keyof UserProfile];
-  });
-
-  if (updateExpressionParts.length === 0)
-    return errorResponse(400, "No valid fields to update");
-
-  await ddbDocClient.send(
-    new UpdateCommand({
-      TableName: TABLE_NAME,
-      Key: { userId },
-      UpdateExpression: `SET ${updateExpressionParts.join(", ")}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-    })
-  );
-
-  return successResponse(200, { message: "Profile updated successfully" });
+  // Your existing implementation...
 }
 
 function successResponse(statusCode: number, data: any) {
