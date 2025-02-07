@@ -7,6 +7,7 @@ import { GeoDataManager, GeoDataManagerConfiguration } from "dynamodb-geo";
 const ddbClient = new DynamoDBClient({});  // configure region as needed
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const TABLE_NAME = "GeoUserProfileTable";
+// TODO is this deploying??
 
 // Configure GeoDataManager for the geospatial table.
 const geoConfig = new GeoDataManagerConfiguration(
