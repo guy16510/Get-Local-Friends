@@ -15,19 +15,21 @@ import { useNavigate } from 'react-router-dom';
 // import type { Schema } from '../../amplify/data/resource';
 // import { generateClient } from 'aws-amplify/data';
 
-// Import DynamoDB Geo classes
+// Import DynamoDB Geo classes.
 import { GeoDataManager, GeoDataManagerConfiguration } from 'dynamodb-geo';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+// We'll use the raw DynamoDBClient rather than the DocumentClient
+// because the Geo library needs a client with a native query method.
 
-// Define a simple interface to cast the geo query result.
+
+// Define a custom interface for the geo query result.
 interface GeoQueryResult<T> {
   items: T[];
   nextToken?: string;
 }
 
 // Update UserProfile type to include geospatial fields.
-// Zipcode remains a string so that leading zeros are preserved.
+// Zipcode remains a string to preserve leading zeros.
 export interface UserProfile {
   id: string | null;
   userId: string;
@@ -57,11 +59,11 @@ const PAGE_SIZE = 10;
 // const client = generateClient<Schema>();
 
 // --- Configure DynamoDB Geo ---
+// Use the low-level DynamoDBClient here.
 const ddbClient = new DynamoDBClient({ region: 'us-east-1' });
-const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const geoConfig = new GeoDataManagerConfiguration(
-  ddbDocClient,
-  'GeoUserProfileTable'
+  ddbClient,
+   'GeoUserProfileTable'
 );
 geoConfig.hashKeyLength = 3; // adjust as needed
 const geoDataManager = new GeoDataManager(geoConfig);
@@ -88,7 +90,7 @@ const SearchPage: React.FC = () => {
   // Optional zipcode input
   const [zipcode, setZipcode] = useState<string>('');
 
-  // Advanced filters toggle and state
+  // Advanced filters toggle and state.
   const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
   const [filterKids, setFilterKids] = useState<boolean>(false);
   const [filterDrinking, setFilterDrinking] = useState<boolean>(false);
@@ -96,7 +98,7 @@ const SearchPage: React.FC = () => {
   const [filterPets, setFilterPets] = useState<boolean>(false);
   const [filterEmployed, setFilterEmployed] = useState<boolean>(false);
 
-  // Results, pagination, and error state
+  // Results, pagination, and error state.
   const [results, setResults] = useState<UserProfile[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [nextToken, setNextToken] = useState<string | null>(null);
@@ -184,7 +186,7 @@ const SearchPage: React.FC = () => {
     return filtered;
   };
 
-  // Use HTML5 geolocation to get user's location.
+  // Use HTML5 geolocation to get user's current location.
   const useMyLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -201,7 +203,7 @@ const SearchPage: React.FC = () => {
     }
   };
 
-  // Fetch profiles using a geospatial query via dynamodb-geo.
+  // Fetch profiles using geospatial query via dynamodb-geo.
   const fetchProfilesByGeo = async (page: number = 1, token?: string) => {
     setIsLoading(true);
     setError(null);
@@ -235,14 +237,13 @@ const SearchPage: React.FC = () => {
         radiusQueryInput.nextToken = token;
       }
 
-      // Cast the response to our GeoQueryResult type.
+      // Cast the response to our custom GeoQueryResult interface.
       const geoResponse = (await geoDataManager.queryRadius(radiusQueryInput)) as unknown as GeoQueryResult<UserProfile>;
       setNextToken(geoResponse.nextToken || null);
 
       const newItems: UserProfile[] = geoResponse.items;
       const filteredItems = applyExtraFilters(newItems);
 
-      // Append new items to existing results if not the first page.
       setResults((prev) => (page === 1 ? filteredItems : [...prev, ...filteredItems]));
       setCurrentPage(page);
     } catch (err: any) {
@@ -259,7 +260,9 @@ const SearchPage: React.FC = () => {
   };
 
   const goToNextPage = () => {
-    if (nextToken) fetchProfilesByGeo(currentPage + 1, nextToken);
+    if (nextToken) {
+      fetchProfilesByGeo(currentPage + 1, nextToken);
+    }
   };
 
   const goToPrevPage = () => {
@@ -288,16 +291,14 @@ const SearchPage: React.FC = () => {
         <Flex direction="row" gap="1rem">
           <TextField
             ariaLabel="Latitude"
-            label="Latitude"
-            labelHidden={true}
+            label="" // no visible label
             placeholder="Enter latitude"
             value={latitude}
             onChange={(e) => setLatitude(e.target.value)}
           />
           <TextField
             ariaLabel="Longitude"
-            label="Longitude"
-            labelHidden={true}
+            label=""
             placeholder="Enter longitude"
             value={longitude}
             onChange={(e) => setLongitude(e.target.value)}
@@ -308,16 +309,14 @@ const SearchPage: React.FC = () => {
         </Flex>
         <TextField
           ariaLabel="Radius in meters"
-          label="Radius"
-          labelHidden={true}
+          label=""
           placeholder="Enter radius (e.g., 5000)"
           value={radius}
           onChange={(e) => setRadius(e.target.value)}
         />
         <TextField
-          ariaLabel="Zipcode"
-          label="Zipcode"
-          labelHidden={true}
+          ariaLabel="Zipcode (optional)"
+          label=""
           placeholder="Enter zipcode (numbers only)"
           value={zipcode}
           onChange={(e) => setZipcode(e.target.value)}
@@ -335,36 +334,31 @@ const SearchPage: React.FC = () => {
           <Flex direction="row" gap="1rem" wrap="wrap" marginTop="1rem">
             <SwitchField
               ariaLabel="Have Kids"
-              label="Have Kids"
-              labelHidden={true}
+              label=""
               isChecked={filterKids}
               onChange={(e) => setFilterKids(e.target.checked)}
             />
             <SwitchField
               ariaLabel="Drink Alcohol"
-              label="Drink Alcohol"
-              labelHidden={true}
+              label=""
               isChecked={filterDrinking}
               onChange={(e) => setFilterDrinking(e.target.checked)}
             />
             <SwitchField
               ariaLabel="Married"
-              label="Married"
-              labelHidden={true}
+              label=""
               isChecked={filterMarried}
               onChange={(e) => setFilterMarried(e.target.checked)}
             />
             <SwitchField
               ariaLabel="Have Pets"
-              label="Have Pets"
-              labelHidden={true}
+              label=""
               isChecked={filterPets}
               onChange={(e) => setFilterPets(e.target.checked)}
             />
             <SwitchField
               ariaLabel="Employed"
-              label="Employed"
-              labelHidden={true}
+              label=""
               isChecked={filterEmployed}
               onChange={(e) => setFilterEmployed(e.target.checked)}
             />
