@@ -4,11 +4,11 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@aws-amplify/ui-react';
 import theme from './theme';
 import Header from './components/Header';
-import HomePage from './components/HomePage';
+import HomePage from './pages/HomePage';
 import SignupForm from './components/SignupForm';
-import ContactUs from './components/ContactUs';
-import ProfilePage from './components/ProfilePage';
-import SearchPage from './components/SearchPage';
+import ContactUs from './pages/ContactUs';
+import ProfilePage from './pages/ProfilePage';
+import SearchPage from './pages/SearchPage';
 import Footer from './components/Footer';
 
 const App: React.FC = () => {

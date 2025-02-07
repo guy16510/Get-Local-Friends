@@ -6,7 +6,7 @@ import { GeoDataManager, GeoDataManagerConfiguration } from "dynamodb-geo";
 
 const ddbClient = new DynamoDBClient({});  // configure region as needed
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
-const TABLE_NAME = process.env.USER_PROFILE_TABLE_NAME || "GeoUserProfileTable";
+const TABLE_NAME = "GeoUserProfileTable";
 
 // Configure GeoDataManager for the geospatial table.
 const geoConfig = new GeoDataManagerConfiguration(

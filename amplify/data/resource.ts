@@ -22,7 +22,6 @@ export const schema = a.schema({
       kids: a.string().required(),
       zipcode: a.string().required(),
       drinking: a.string().required(),
-      // NEW geospatial fields:
       lat: a.float().required(),
       lng: a.float().required(),
       hobbies: a.string().array().required(),

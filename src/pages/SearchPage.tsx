@@ -12,6 +12,7 @@ import {
   Loader,
 } from '@aws-amplify/ui-react';
 import { useNavigate } from 'react-router-dom';
+import { UserProfile } from '../types';
 // import type { Schema } from '../../amplify/data/resource';
 // import { generateClient } from 'aws-amplify/data';
 
@@ -28,32 +29,6 @@ interface GeoQueryResult<T> {
   nextToken?: string;
 }
 
-// Update UserProfile type to include geospatial fields.
-// Zipcode remains a string to preserve leading zeros.
-export interface UserProfile {
-  id: string | null;
-  userId: string;
-  firstName: string;
-  lastNameInitial: string;
-  email: string;
-  lookingFor: string;
-  kids: string;
-  zipcode: string;
-  drinking: string;
-  lat: number;
-  lng: number;
-  hobbies: (string | null)[];
-  availability: (string | null)[];
-  married: string | null;
-  ageRange: string;
-  friendAgeRange: string;
-  pets: string;
-  employed: string;
-  work: string;
-  political?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-}
 
 const PAGE_SIZE = 10;
 // const client = generateClient<Schema>();
