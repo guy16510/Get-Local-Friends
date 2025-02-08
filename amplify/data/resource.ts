@@ -16,11 +16,9 @@ export const schema = a.schema({
       id: a.id(),
       userId: a.string().required(),
       firstName: a.string().required(),
-      lastNameInitial: a.string().required(),
-      email: a.string().required(),
+      lastName: a.string().required(),
       lookingFor: a.string().required(),
       kids: a.boolean().required(),
-      zipcode: a.string().required(),
       drinking: a.boolean().required(),
       geohash: a.string().required(),
       rangeKey: a.string().required(),
@@ -32,10 +30,12 @@ export const schema = a.schema({
       ageRange: a.string().required(),
       friendAgeRange: a.string().required(),
       pets: a.boolean().required(),
+      employed: a.boolean(),
+      work: a.string(),
+      political: a.string(),
     })
     .secondaryIndexes((index) => [
       index("geohash"),     // Adding a secondary index on geohash
-      // index("zipcode")      // Keeping the example for zipcode if needed
     ])
     .authorization((auth) => [
       auth.publicApiKey(),

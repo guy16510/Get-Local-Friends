@@ -1,0 +1,131 @@
+/* src/styles/SignupForm.css */
+
+.signup-form {
+  max-width: 700px;
+  margin-top: 20px!important;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.signup-form h1 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.question {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.question label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.question input,
+.question select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.question input:focus,
+.question select:focus {
+  border-color: #0077ff;
+  outline: none;
+}
+
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #0077ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #005fcc;
+}
+
+.error-text {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 10px;
+}
+
+.alert {
+  margin-top: 20px;
+}
+
+/* Dark mode styles */
+.dark .signup-form {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.dark .signup-form h1 {
+  color: #f0f0f0;
+}
+
+.dark .question label {
+  color: #ccc;
+}
+
+.dark .question input,
+.dark .question select {
+  background-color: #2b2b2b;
+  border: 1px solid #444;
+  color: #f0f0f0;
+}
+
+.dark .question input:focus,
+.dark .question select:focus {
+  border-color: #66aaff;
+}
+
+.dark button {
+  background-color: #66aaff;
+  color: #1e1e1e;
+}
+
+.dark button:hover {
+  background-color: #5599dd;
+}
+
+.dark .error-text {
+  color: #ff6b6b;
+}
+
+@media (max-width: 600px) {
+  .signup-form {
+    padding: 15px;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 10px;
+  }
+}
+
+.amplify-text.required-warning{
+  color:red;
+}

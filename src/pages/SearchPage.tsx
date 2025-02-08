@@ -52,6 +52,7 @@ const SearchPage: React.FC = () => {
             sessionToken: credentials?.sessionToken || ''
           },
         });
+
         setDdbClient(client);
       } catch (err) {
         console.error('Error fetching credentials:', err);
@@ -80,7 +81,6 @@ const SearchPage: React.FC = () => {
         CenterPoint: { latitude: parseFloat(latitude), longitude: parseFloat(longitude) },
         // Limit: PAGE_SIZE,
       });
-      debugger;
       setResults(geoResponse.items);
     } catch (err: any) {
       setError(err.message || 'Error fetching profiles');

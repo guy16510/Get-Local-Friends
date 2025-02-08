@@ -18,7 +18,6 @@ export const questions: Question[] = [
     multi: true, // We'll convert to a single CSV string for storage
   },
   { field: 'kids', label: 'Do you have Kids?', type: 'switch' },
-  { field: 'zipcode', label: 'Zipcode?', type: 'text', required: true },
   { field: 'drinking', label: 'Do you drink Alcohol?', type: 'switch' },
   {
     field: 'hobbies',
@@ -95,7 +94,5 @@ export const questions: Question[] = [
     required: false,
   },
   { field: 'firstName', label: 'First Name?', type: 'text', required: true },
-  { field: 'lastNameInitial', label: 'Last Name Initial?', type: 'text', required: true },
-  { field: 'email', label: 'Email?', type: 'email', required: true },
-  { field: 'password', label: 'Enter Password', type: 'password', required: true },
+  { field: 'lastName', label: 'Last Name?', type: 'text', required: true },
 ];

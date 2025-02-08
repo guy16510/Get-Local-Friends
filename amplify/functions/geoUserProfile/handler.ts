@@ -16,11 +16,9 @@ const geoDataManager = new GeoDataManager(geoConfig);
 type GeoUserProfile = {
   userId: string;
   firstName: string;
-  lastNameInitial: string;
-  email: string;
+  lastName: string;
   lookingFor: string;
   kids: boolean;
-  zipcode: string;
   drinking: boolean;
   lat: number;
   lng: number;
@@ -71,13 +69,17 @@ async function createProfile(event: APIGatewayEvent) {
     return errorResponse(400, "Missing latitude or longitude");
   }
 
+  if (!profile.userId) {
+    return errorResponse(400, "Missing userId");
+  }
+
   profile.createdAt = new Date().toISOString();
   profile.updatedAt = profile.createdAt;
   profile.geohash = geohash.encode(profile.lat, profile.lng);
-  profile.rangeKey = profile.userId;
+  profile.rangeKey = `RANGE#${profile.userId}`; // Automatically derive rangeKey
 
   const putPointInput = {
-    RangeKeyValue: { S: profile.userId },
+    RangeKeyValue: { S: profile.rangeKey },
     GeoPoint: {
       latitude: profile.lat,
       longitude: profile.lng,
