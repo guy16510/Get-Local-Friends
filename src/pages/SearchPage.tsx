@@ -74,7 +74,7 @@ const SearchPage: React.FC = () => {
       const geoConfig = new GeoDataManagerConfiguration(ddbClient, "GeoUserProfileTable");
       geoConfig.hashKeyLength = 3;
       const geoDataManager = new GeoDataManager(geoConfig);
-
+      debugger;
       const geoResponse:any = await geoDataManager.queryRadius({
         RadiusInMeter: parseFloat(radius),
         CenterPoint: { latitude: parseFloat(latitude), longitude: parseFloat(longitude) },

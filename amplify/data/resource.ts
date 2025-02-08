@@ -33,6 +33,10 @@ export const schema = a.schema({
       friendAgeRange: a.string().required(),
       pets: a.boolean().required(),
     })
+    .secondaryIndexes((index) => [
+      index("geohash"),     // Adding a secondary index on geohash
+      // index("zipcode")      // Keeping the example for zipcode if needed
+    ])
     .authorization((auth) => [
       auth.publicApiKey(),
       auth.authenticated().to(['read']) // Grant read access to authenticated users
