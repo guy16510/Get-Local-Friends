@@ -3,22 +3,22 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
 export const schema = a.schema({
   Contact: a
-  .model({
-    name: a.string(),
-    email: a.string().required(),
-    message: a.string().required(),
-    timestamp: a.datetime().required(),
-  })
-  .authorization((auth) => [auth.publicApiKey()]),
+    .model({
+      name: a.string(),
+      email: a.string().required(),
+      message: a.string().required(),
+      timestamp: a.datetime().required(),
+    })
+    .authorization((auth) => [auth.publicApiKey()]),
 
   GeoUserProfile: a
     .model({
-      hashKey: a.float(),   // or make it optional if you let dynamodb-geo populate it
+      hashKey: a.float(),
       rangeKey: a.string(),
       userId: a.string().required(),
       firstName: a.string().required(),
       lastName: a.string().required(),
-      lookingFor: a.string().required(),
+      lookingFor: a.string().array().required(),
       kids: a.boolean().required(),
       drinking: a.boolean().required(),
       lat: a.float().required(),
@@ -36,12 +36,10 @@ export const schema = a.schema({
       updatedAt: a.datetime(),
     })
     // For easy direct lookups by userId, define a GSI:
-    .secondaryIndexes((index) => [
-      index("userId"),    // So we can query by userId
-    ])
+    .secondaryIndexes((index) => [index("userId")])
     .authorization((auth) => [
       auth.publicApiKey(),
-      auth.authenticated().to(['read'])
+      auth.authenticated().to(["read"]),
     ]),
 });
 

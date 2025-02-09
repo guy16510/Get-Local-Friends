@@ -1,4 +1,4 @@
-// handler.ts
+// amplify/functions/geoUserProfile/handler.ts
 import { APIGatewayEvent, Context } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
@@ -11,14 +11,16 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 /**
  * Configuration
  */
-const REGION = "us-east-1";            // Adjust if needed
+const REGION = "us-east-1"; // Adjust if needed
 const TABLE_NAME = "GeoUserProfileTable";
 // If you have a GSI on userId, e.g. "userId-index" or "GeoUserProfile.userId.index", use that name here:
 const USERID_GSI_NAME = "userId-index";
 
 /**
- * The shape of our user profile data. 
+ * The shape of our user profile data.
  * (DynamoDB-Geo will add numeric hashKey, numeric geohash automatically.)
+ *
+ * Updated: 'lookingFor?: string[];'
  */
 interface GeoUserProfile {
   userId?: string;
@@ -26,7 +28,10 @@ interface GeoUserProfile {
   lng?: number;
   firstName?: string;
   lastName?: string;
-  lookingFor?: string;
+
+  // CHANGED to an array
+  lookingFor?: string[];
+
   kids?: boolean;
   drinking?: boolean;
   availability?: string[];
@@ -113,18 +118,21 @@ async function createProfile(event: APIGatewayEvent) {
   const now = new Date().toISOString();
   profile.createdAt = now;
   profile.updatedAt = now;
+
   // fallback for arrays
   profile.availability = profile.availability ?? [];
+  // CHANGED: fallback for lookingFor
+  profile.lookingFor = profile.lookingFor ?? [];
 
   // Insert with `putPoint`
   await geoDataManager.putPoint({
-    RangeKeyValue: { S: profile.userId },  // sort key
+    RangeKeyValue: { S: profile.userId }, // sort key
     GeoPoint: {
       latitude: profile.lat,
       longitude: profile.lng,
     },
     PutItemInput: {
-      Item: marshall(profile),  // convert JS object to raw DynamoDB shape
+      Item: marshall(profile), // convert JS object to raw DynamoDB shape
     },
   });
 
@@ -212,6 +220,10 @@ async function updateProfile(event: APIGatewayEvent) {
 
   // Example: Just updating lat/lng and a few other fields (like updatedAt).
   const now = new Date().toISOString();
+
+  // Optionally handle fallback for lookingFor here too
+  updates.lookingFor = updates.lookingFor ?? [];
+  updates.availability = updates.availability ?? [];
 
   const updatePointParams = {
     RangeKeyValue: { S: updates.userId }, // The existing item’s sort key
