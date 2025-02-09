@@ -3,11 +3,9 @@
 export type GeoUserProfile = {
   userId: string;
   firstName: string;
-  lastNameInitial: string;
-  email: string;
+  lastName: string;
   lookingFor: string;    // stored as a single string (CSV if multi-check)
   kids: boolean;
-  zipcode: string;
   drinking: boolean;
   lat: number;
   lng: number;

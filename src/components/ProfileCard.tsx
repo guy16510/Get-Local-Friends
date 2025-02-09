@@ -22,12 +22,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => (
         {profile && ( */}
           <View border="1px solid var(--amplify-colors-neutral-60)" borderRadius="medium" padding="1rem" width="100%" marginTop="1rem">
             <Heading level={2}>
-              {profile.firstName} {profile.lastNameInitial}
+              {profile.firstName} {profile.lastName}
             </Heading>
-            <Text>Email: {profile.email}</Text>
             <Text>Looking For: {profile.lookingFor}</Text>
             <Text>Kids: {profile.kids}</Text>
-            <Text>Zipcode: {profile.zipcode}</Text>
             <Text>Drinking: {profile.drinking}</Text>
             <Text>Hobbies: {profile.hobbies.join(', ')}</Text>
             <Text>Availability: {profile.availability.join(', ')}</Text>

@@ -19,9 +19,6 @@ const Table: React.FC<TableProps> = ({ data, onRowClick }) => (
     <tbody>
       {data.map((profile) => (
         <tr key={profile.userId} onClick={() => onRowClick(profile)} style={{ cursor: 'pointer' }}>
-          <td>{`${profile.firstName} ${profile.lastNameInitial}`}</td>
-          <td>{profile.email}</td>
-          <td>{profile.zipcode}</td>
           <td>{profile.ageRange}</td>
         </tr>
       ))}

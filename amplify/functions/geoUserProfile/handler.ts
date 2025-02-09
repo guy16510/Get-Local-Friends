@@ -1,132 +1,183 @@
-// amplify/functions/GeoUserProfile/handler.ts
+// handler.ts
 import { APIGatewayEvent, Context } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { GeoDataManager, GeoDataManagerConfiguration } from "dynamodb-geo";
-import * as geohash from "ngeohash";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+} from "@aws-sdk/lib-dynamodb";
+import { GeoDataManagerConfiguration, GeoDataManager } from "dynamodb-geo-v3";
+import { marshall } from "@aws-sdk/util-dynamodb";
 
-const ddbClient = new DynamoDBClient({ region: "us-east-1" });
-const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
+/**
+ * Configuration
+ */
+const REGION = "us-east-1";            // Adjust if needed
 const TABLE_NAME = "GeoUserProfileTable";
+// If you have a GSI on userId, e.g. "userId-index" or "GeoUserProfile.userId.index", use that name here:
+const USERID_GSI_NAME = "userId-index";
 
-const geoConfig = new GeoDataManagerConfiguration(ddbDocClient, TABLE_NAME);
-geoConfig.hashKeyLength = 3;
-const geoDataManager = new GeoDataManager(geoConfig);
-
-type GeoUserProfile = {
-  userId: string;
-  firstName: string;
-  lastName: string;
-  lookingFor: string;
-  kids: boolean;
-  drinking: boolean;
-  lat: number;
-  lng: number;
-  hobbies: string[];
-  availability: string[];
-  married: boolean;
-  ageRange: string;
-  friendAgeRange: string;
-  pets: boolean;
-  employed: boolean;
-  work: string;
+/**
+ * The shape of our user profile data. 
+ * (DynamoDB-Geo will add numeric hashKey, numeric geohash automatically.)
+ */
+interface GeoUserProfile {
+  userId?: string;
+  lat?: number;
+  lng?: number;
+  firstName?: string;
+  lastName?: string;
+  lookingFor?: string;
+  kids?: boolean;
+  drinking?: boolean;
+  availability?: string[];
+  married?: boolean;
+  ageRange?: string;
+  friendAgeRange?: string;
+  pets?: boolean;
+  employed?: boolean;
+  work?: string;
   political?: string;
   createdAt?: string;
   updatedAt?: string;
-  geohash?: string;
-  rangeKey?: string;
-};
+}
 
+// ----------------------------
+// 1) Create a v3 DynamoDB client
+// ----------------------------
+const rawClient = new DynamoDBClient({ region: REGION });
+
+// ----------------------------
+// 2) CAST the client to `any`
+//    (Workaround for the library's older type definitions.)
+// ----------------------------
+const ddbClientAsAny = rawClient as any;
+
+// ----------------------------
+// 3) Create a DocumentClient if you need normal queries
+// ----------------------------
+const ddbDocClient = DynamoDBDocumentClient.from(rawClient);
+
+// ----------------------------
+// 4) Configure dynamodb-geo
+// ----------------------------
+const geoConfig = new GeoDataManagerConfiguration(ddbClientAsAny, TABLE_NAME);
+geoConfig.hashKeyLength = 3; // adjust for bigger or smaller partitioning
+const geoDataManager = new GeoDataManager(geoConfig);
+
+/**
+ * Lambda entry point
+ */
 export const handler = async (event: APIGatewayEvent, context: Context) => {
-  console.log("Received event:", JSON.stringify(event, null, 2));
-
   try {
     switch (event.httpMethod) {
       case "POST":
         return await createProfile(event);
       case "GET":
+        // If query params have lat/lng => geo radius search
         if (event.queryStringParameters?.lat && event.queryStringParameters?.lng) {
           return await getProfilesWithinRadius(event);
         }
+        // else => get by userId
         return await getProfile(event);
+
       case "PUT":
         return await updateProfile(event);
+
       default:
-        return errorResponse(400, "Unsupported HTTP method");
+        return errorResponse(400, `Unsupported method: ${event.httpMethod}`);
     }
-  } catch (error) {
-    console.error("Error:", error);
+  } catch (err) {
+    console.error("Handler error:", err);
     return errorResponse(500, "Internal server error");
   }
 };
 
+/**
+ * Create a new user profile (POST)
+ * - Uses `putPoint` so dynamodb-geo calculates numeric geohash & hashKey
+ */
 async function createProfile(event: APIGatewayEvent) {
-  if (!event.body) return errorResponse(400, "Missing request body");
-
-  const profile: GeoUserProfile = JSON.parse(event.body);
-
-  if (profile.lat === undefined || profile.lng === undefined) {
-    return errorResponse(400, "Missing latitude or longitude");
+  if (!event.body) {
+    return errorResponse(400, "Missing request body");
   }
 
+  const profile: GeoUserProfile = JSON.parse(event.body);
   if (!profile.userId) {
     return errorResponse(400, "Missing userId");
   }
+  if (profile.lat === undefined || profile.lng === undefined) {
+    return errorResponse(400, "Missing lat/lng");
+  }
 
-  profile.createdAt = new Date().toISOString();
-  profile.updatedAt = profile.createdAt;
-  profile.geohash = geohash.encode(profile.lat, profile.lng);
-  profile.rangeKey = `RANGE#${profile.userId}`; // Automatically derive rangeKey
+  // Add timestamps
+  const now = new Date().toISOString();
+  profile.createdAt = now;
+  profile.updatedAt = now;
+  // fallback for arrays
+  profile.availability = profile.availability ?? [];
 
-  const putPointInput = {
-    RangeKeyValue: { S: profile.rangeKey },
+  // Insert with `putPoint`
+  await geoDataManager.putPoint({
+    RangeKeyValue: { S: profile.userId },  // sort key
     GeoPoint: {
       latitude: profile.lat,
       longitude: profile.lng,
     },
     PutItemInput: {
-      TableName: TABLE_NAME,
-      Item: profile as any,
+      Item: marshall(profile),  // convert JS object to raw DynamoDB shape
     },
-  };
+  });
 
-  await geoDataManager.putPoint(putPointInput);
-
-  return successResponse(201, profile);
+  return successResponse(201, { message: "Profile created", profile });
 }
 
+/**
+ * Get a single user by userId (GET?userId=xxx)
+ * - Requires a GSI on userId
+ */
 async function getProfile(event: APIGatewayEvent) {
-  if (!event.queryStringParameters || !event.queryStringParameters.userId) {
+  if (!event.queryStringParameters?.userId) {
     return errorResponse(400, "Missing userId");
   }
 
   const userId = event.queryStringParameters.userId;
 
+  // Query the GSI
+  const queryInput = {
+    TableName: TABLE_NAME,
+    IndexName: USERID_GSI_NAME,
+    KeyConditionExpression: "userId = :uid",
+    ExpressionAttributeValues: {
+      ":uid": userId,
+    },
+    Limit: 1,
+  };
+
   try {
-    const result = await ddbDocClient.send(
-      new GetCommand({
-        TableName: TABLE_NAME,
-        Key: { userId },
-      })
-    );
-
-    if (!result.Item) {
-      return errorResponse(404, "Profile not found");
+    const result = await ddbDocClient.send(new QueryCommand(queryInput));
+    if (!result.Items || result.Items.length === 0) {
+      return errorResponse(404, `Profile not found for userId=${userId}`);
     }
-
-    return successResponse(200, result.Item);
+    return successResponse(200, result.Items[0]);
   } catch (error) {
-    console.error("Error getting profile:", error);
-    return errorResponse(500, "Error retrieving profile");
+    console.error("Error in getProfile:", error);
+    return errorResponse(500, "Error retrieving profile by userId");
   }
 }
 
+/**
+ * Get profiles within a radius
+ * - GET?lat=xxx&lng=yyy&distance=5&unit=km (or mi)
+ */
 async function getProfilesWithinRadius(event: APIGatewayEvent) {
   const { lat, lng, distance = "5", unit = "km" } = event.queryStringParameters || {};
 
   const latitude = parseFloat(lat || "0");
   const longitude = parseFloat(lng || "0");
-  const distanceInMeters = unit === "mi" ? parseFloat(distance) * 1609.34 : parseFloat(distance) * 1000;
+  const distanceInMeters =
+    unit === "mi"
+      ? parseFloat(distance) * 1609.34
+      : parseFloat(distance) * 1000;
 
   try {
     const result = await geoDataManager.queryRadius({
@@ -136,43 +187,64 @@ async function getProfilesWithinRadius(event: APIGatewayEvent) {
 
     return successResponse(200, result);
   } catch (error) {
-    console.error("Error getting profiles within radius:", error);
-    return errorResponse(500, "Error retrieving profiles");
+    console.error("Error in getProfilesWithinRadius:", error);
+    return errorResponse(500, "Error retrieving nearby profiles");
   }
 }
 
+/**
+ * Update a user profile (PUT)
+ * - If lat/lng changes, must use `updatePoint` so geohash/hashKey are recalculated
+ * - `UpdateItemInput` must include `TableName` and a placeholder `Key`.
+ */
 async function updateProfile(event: APIGatewayEvent) {
-  if (!event.body) return errorResponse(400, "Missing request body");
+  if (!event.body) {
+    return errorResponse(400, "Missing request body");
+  }
+  const updates: GeoUserProfile = JSON.parse(event.body);
 
-  const profile: GeoUserProfile = JSON.parse(event.body);
-
-  if (!profile.userId) {
+  if (!updates.userId) {
     return errorResponse(400, "Missing userId");
   }
+  if (updates.lat === undefined || updates.lng === undefined) {
+    return errorResponse(400, "Missing lat/lng");
+  }
 
-  profile.updatedAt = new Date().toISOString();
-  profile.geohash = geohash.encode(profile.lat, profile.lng);
+  // Example: Just updating lat/lng and a few other fields (like updatedAt).
+  const now = new Date().toISOString();
 
-  const updateParams = {
-    TableName: TABLE_NAME,
-    Key: { userId: profile.userId },
-    UpdateExpression: "set #updatedAt = :updatedAt, #geohash = :geohash",
-    ExpressionAttributeNames: {
-      "#updatedAt": "updatedAt",
-      "#geohash": "geohash",
+  const updatePointParams = {
+    RangeKeyValue: { S: updates.userId }, // The existing item’s sort key
+    GeoPoint: {
+      latitude: updates.lat,
+      longitude: updates.lng,
     },
-    ExpressionAttributeValues: {
-      ":updatedAt": profile.updatedAt,
-      ":geohash": profile.geohash,
+    UpdateItemInput: {
+      // Must include TableName + placeholder Key for library's type signature
+      TableName: TABLE_NAME,
+      Key: {},
+      UpdateExpression: "SET #updatedAt = :updatedAt",
+      ExpressionAttributeNames: {
+        "#updatedAt": "updatedAt",
+      },
+      ExpressionAttributeValues: {
+        ":updatedAt": { S: now },
+      },
+      ReturnValues: "ALL_NEW" as const,
     },
-    ReturnValues: "UPDATED_NEW" as const,
   };
 
-  await ddbDocClient.send(new UpdateCommand(updateParams));
+  const result = await geoDataManager.updatePoint(updatePointParams);
 
-  return successResponse(200, profile);
+  return successResponse(200, {
+    message: "Profile updated",
+    updatedRaw: result.Attributes,
+  });
 }
 
+/**
+ * Helpers
+ */
 function successResponse(statusCode: number, data: any) {
   return {
     statusCode,
@@ -180,7 +252,6 @@ function successResponse(statusCode: number, data: any) {
     body: JSON.stringify(data),
   };
 }
-
 function errorResponse(statusCode: number, message: string) {
   return {
     statusCode,

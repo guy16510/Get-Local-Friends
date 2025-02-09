@@ -1,61 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Button,
-  Flex,
-  Heading,
-  TextField,
-  View,
-  Text,
-  Loader,
-} from '@aws-amplify/ui-react';
-// import { useNavigate } from 'react-router-dom';
-import Message from '../components/Message';
-import { GeoUserProfile } from '../types';
-// import { useGeoLocation } from '../hooks/useGeoLocation';
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { GeoDataManager, GeoDataManagerConfiguration } from "dynamodb-geo-v3";
 import { fetchAuthSession } from 'aws-amplify/auth';
 
-// const PAGE_SIZE = 10;
-// const STORAGE_KEYS = {
-//   lat: 'search_latitude',
-//   lng: 'search_longitude',
-//   radius: 'search_radius',
-//   filters: 'search_filters',
-//   results: 'search_results',
-//   nextToken: 'search_nextToken',
-//   currentPage: 'search_currentPage',
-// };
-
 const SearchPage: React.FC = () => {
-  // const navigate = useNavigate();
-  // const { location: browserLocation, getLocation: getBrowserLocation, error: geoError } = useGeoLocation();
-
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
-  const [radius, setRadius] = useState('5000');
-  const [results, setResults] = useState<GeoUserProfile[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [ddbClient, setDdbClient] = useState<DynamoDB | null>(null);
+  const [latitude, setLatitude] = useState('40.7128'); // Example
+  const [longitude, setLongitude] = useState('-74.0060'); // Example
+  const [radius, setRadius] = useState('5000');
+  const [results, setResults] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeDynamoDB = async () => {
       try {
         const session = await fetchAuthSession();
         const credentials = session.credentials;
+        console.log('[initializeDynamoDB] session:', session);
+
         const client = new DynamoDB({
           region: 'us-east-1',
           credentials: {
             accessKeyId: credentials?.accessKeyId || '',
             secretAccessKey: credentials?.secretAccessKey || '',
-            sessionToken: credentials?.sessionToken || ''
+            sessionToken: credentials?.sessionToken || '',
           },
+          // You can add a logger to see internal AWS SDK logs
+          // logger: console,
         });
+        console.log('[initializeDynamoDB] Created DynamoDB client:', client.config);
 
         setDdbClient(client);
       } catch (err) {
-        console.error('Error fetching credentials:', err);
+        console.error('[initializeDynamoDB] Error fetching credentials:', err);
         setError('Failed to initialize DynamoDB client.');
       }
     };
@@ -68,57 +45,95 @@ const SearchPage: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
     setError(null);
+
+    console.log('[fetchProfilesByGeo] Starting query', {
+      latitude,
+      longitude,
+      radius,
+    });
 
     try {
       const geoConfig = new GeoDataManagerConfiguration(ddbClient, "GeoUserProfileTable");
-      geoConfig.hashKeyLength = 3;
-      const geoDataManager = new GeoDataManager(geoConfig);
-      debugger;
-      const geoResponse:any = await geoDataManager.queryRadius({
-        RadiusInMeter: parseFloat(radius),
-        CenterPoint: { latitude: parseFloat(latitude), longitude: parseFloat(longitude) },
-        // Limit: PAGE_SIZE,
+      // Confirm your table name and region are correct
+      geoConfig.hashKeyLength = 3; // Adjust if needed
+
+      console.log('[fetchProfilesByGeo] geoConfig:', {
+        tableName: geoConfig.tableName,
+        hashKeyLength: geoConfig.hashKeyLength,
       });
-      setResults(geoResponse.items);
+
+      // If you want more insight, set a debugger here or log the `geoConfig`
+      const geoDataManager = new GeoDataManager(geoConfig);
+
+      // Some logging:
+      console.log('[fetchProfilesByGeo] About to call queryRadius with:', {
+        RadiusInMeter: Number(radius),
+        CenterPoint: {
+          latitude: Number(latitude),
+          longitude: Number(longitude),
+        },
+      });
+
+      const geoResponse: any = await geoDataManager.queryRadius({
+        RadiusInMeter: Number(radius),
+        CenterPoint: {
+          latitude: Number(latitude),
+          longitude: Number(longitude),
+        },
+      });
+
+      console.log('[fetchProfilesByGeo] queryRadius response:', geoResponse);
+
+      // See if .items is present
+      if (!geoResponse.items) {
+        console.warn('[fetchProfilesByGeo] geoResponse has no .items');
+      } else {
+        console.log('[fetchProfilesByGeo] item count:', geoResponse.items.length);
+      }
+
+      setResults(geoResponse.items || []);
     } catch (err: any) {
+      console.error('[fetchProfilesByGeo] Error:', err);
       setError(err.message || 'Error fetching profiles');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <View padding="2rem">
-      <Heading level={1}>Find People Near You</Heading>
-      <Flex direction="column" gap="1rem">
-        <TextField
-          label="Latitude"
+    <div>
+      <h2>Search Page</h2>
+      <div>
+        <label>Lat:</label>
+        <input
           value={latitude}
           onChange={(e) => setLatitude(e.target.value)}
         />
-        <TextField
-          label="Longitude"
+      </div>
+      <div>
+        <label>Lng:</label>
+        <input
           value={longitude}
           onChange={(e) => setLongitude(e.target.value)}
         />
-        <TextField
-          label="Radius (meters)"
+      </div>
+      <div>
+        <label>Radius (meters):</label>
+        <input
           value={radius}
           onChange={(e) => setRadius(e.target.value)}
         />
-        <Button onClick={fetchProfilesByGeo} variation="primary">Search</Button>
-        {isLoading && <Loader variation="linear" ariaLabel="Loading profiles..." />}
-        {error && <Message type="error">{error}</Message>}
-        {results.map((profile) => (
-          <View key={profile.userId} border="1px solid #ccc" padding="1rem">
-            <Text>{profile.firstName} {profile.lastNameInitial}</Text>
-            <Text>{profile.email}</Text>
-          </View>
+      </div>
+      <button onClick={fetchProfilesByGeo}>Search</button>
+
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+      <div>
+        {results.map((item, idx) => (
+          <div key={idx}>
+            {JSON.stringify(item)}
+          </div>
         ))}
-      </Flex>
-    </View>
+      </div>
+    </div>
   );
 };
 

@@ -19,9 +19,13 @@ import { generateClient } from 'aws-amplify/data';
 import { getCognitoUserId } from '../utils/auth';
 import type { Schema } from '../../amplify/data/resource';
 import { motion, AnimatePresence } from 'framer-motion';
+import geohash from 'ngeohash'; // Ensure you install this package
 import '../styles/SignupForm.css';
 
 const client = generateClient<Schema>();
+
+const transformObjectToArray = (obj: any) =>
+  Object.keys(obj).filter((key) => obj[key]);
 
 const SignupForm: React.FC = () => {
   const { register, handleSubmit, control, setValue, trigger, formState: { errors, isSubmitting } } = useForm();
@@ -31,8 +35,8 @@ const SignupForm: React.FC = () => {
 
   useEffect(() => {
     if (location) {
-      setValue('location.lat', location.lat);
-      setValue('location.lng', location.lng);
+      setValue('lat', location.lat);
+      setValue('lng', location.lng);
     }
   }, [location, setValue]);
 
@@ -46,10 +50,35 @@ const SignupForm: React.FC = () => {
   const onSubmit = async (data: any) => {
     try {
       const userId = await getCognitoUserId();
-      await client.models.GeoUserProfile.create({ userId, ...data });
+
+      const transformedData: any = {
+        userId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        lookingFor: transformObjectToArray(data.lookingFor),
+        kids: data.kids,
+        drinking: data.drinking,
+        geohash: geohash.encode(data.lat, data.lng),
+        rangeKey: Date.now().toString(),
+        lat: data.lat,
+        lng: data.lng,
+        hobbies: transformObjectToArray(data.hobbies),
+        availability: transformObjectToArray(data.availability),
+        married: data.married,
+        ageRange: data.ageRange,
+        friendAgeRange: transformObjectToArray(data.friendAgeRange),
+        pets: data.pets,
+        employed: data.employed,
+        work: data.work,
+        political: data.political,
+      };
+
+      console.log('Final Payload:', transformedData);
+
+      await client.models.GeoUserProfile.create(transformedData);
       alert('Sign up successful!');
     } catch (error) {
-      console.error(error);
+      console.error('Submission error:', error);
     }
   };
 
@@ -167,7 +196,7 @@ const SignupForm: React.FC = () => {
               {errors[question.field] && (
                 <Text className="required-warning">* This field is required</Text>
               )}
-              {index < groupedQuestions[currentStep].length - 1 && <Divider size="small"/>}
+              {index < groupedQuestions[currentStep].length - 1 && <Divider size="small" />}
             </div>
           ))}
 

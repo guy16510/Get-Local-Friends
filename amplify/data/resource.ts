@@ -3,25 +3,24 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
 export const schema = a.schema({
   Contact: a
-    .model({
-      name: a.string(),
-      email: a.string().required(),
-      message: a.string().required(),
-      timestamp: a.datetime().required(),
-    })
-    .authorization((auth) => [auth.publicApiKey()]),
+  .model({
+    name: a.string(),
+    email: a.string().required(),
+    message: a.string().required(),
+    timestamp: a.datetime().required(),
+  })
+  .authorization((auth) => [auth.publicApiKey()]),
 
-    GeoUserProfile: a
+  GeoUserProfile: a
     .model({
-      id: a.id(),
+      hashKey: a.float(),   // or make it optional if you let dynamodb-geo populate it
+      rangeKey: a.string(),
       userId: a.string().required(),
       firstName: a.string().required(),
       lastName: a.string().required(),
       lookingFor: a.string().required(),
       kids: a.boolean().required(),
       drinking: a.boolean().required(),
-      geohash: a.string().required(),
-      rangeKey: a.string().required(),
       lat: a.float().required(),
       lng: a.float().required(),
       hobbies: a.string().array().required(),
@@ -33,13 +32,16 @@ export const schema = a.schema({
       employed: a.boolean(),
       work: a.string(),
       political: a.string(),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
     })
+    // For easy direct lookups by userId, define a GSI:
     .secondaryIndexes((index) => [
-      index("geohash"),     // Adding a secondary index on geohash
+      index("userId"),    // So we can query by userId
     ])
     .authorization((auth) => [
       auth.publicApiKey(),
-      auth.authenticated().to(['read']) // Grant read access to authenticated users
+      auth.authenticated().to(['read'])
     ]),
 });
 
