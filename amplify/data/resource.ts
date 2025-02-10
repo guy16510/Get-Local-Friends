@@ -35,11 +35,37 @@ export const schema = a.schema({
       createdAt: a.datetime(),
       updatedAt: a.datetime(),
     })
-    // For easy direct lookups by userId, define a GSI:
     .secondaryIndexes((index) => [index("userId")])
     .authorization((auth) => [
       auth.publicApiKey(),
       auth.authenticated().to(["read"]),
+    ]),
+
+  // Conversation Model
+  Conversation: a
+    .model({
+      user1Id: a.string().required(),
+      user2Id: a.string().required(),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
+    })
+    .secondaryIndexes((index) => [index("user1Id"), index("user2Id")])
+    .authorization((auth) => [
+      auth.authenticated().to(["create", "read", "update", "delete"]),
+    ]),
+
+  // Message Model
+  Message: a
+    .model({
+      conversationId: a.string().required(),
+      senderId: a.string().required(),
+      recipientId: a.string().required(),
+      content: a.string().required(),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
+    })
+    .authorization((auth) => [
+      auth.authenticated().to(["create", "read", "update", "delete"]),
     ]),
 });
 
@@ -54,3 +80,7 @@ export const data = defineData({
     },
   },
 });
+
+// // Export models directly for permission management
+// export const ConversationModel = schema.types.Conversation;
+// export const MessageModel = schema.types.Message;

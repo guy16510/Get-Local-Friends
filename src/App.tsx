@@ -60,3 +60,20 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+/**
+ * 
+ * 
+import ChatApp from './components/ChatApp';
+
+const currentUser = {
+  id: 'user123', // Replace with Cognito User ID
+  name: 'John Doe',
+};
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+    <ChatApp currentUser={currentUser} />
+);
+
+ */
