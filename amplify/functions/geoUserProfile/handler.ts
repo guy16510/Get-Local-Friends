@@ -97,10 +97,6 @@ export const handler = async (event: APIGatewayEvent, context: Context) => {
   }
 };
 
-/**
- * Create a new user profile (POST)
- * - Uses `putPoint` so dynamodb-geo calculates numeric geohash & hashKey
- */
 async function createProfile(event: APIGatewayEvent) {
   if (!event.body) {
     return errorResponse(400, "Missing request body");
@@ -119,25 +115,90 @@ async function createProfile(event: APIGatewayEvent) {
   profile.createdAt = now;
   profile.updatedAt = now;
 
-  // fallback for arrays
+  // Fallback for arrays
   profile.availability = profile.availability ?? [];
-  // CHANGED: fallback for lookingFor
   profile.lookingFor = profile.lookingFor ?? [];
 
   // Insert with `putPoint`
   await geoDataManager.putPoint({
-    RangeKeyValue: { S: profile.userId }, // sort key
+    RangeKeyValue: { S: profile.userId }, // This acts as the rangeKey
     GeoPoint: {
       latitude: profile.lat,
       longitude: profile.lng,
     },
     PutItemInput: {
-      Item: marshall(profile), // convert JS object to raw DynamoDB shape
+      Item: marshall(profile),
     },
   });
 
-  return successResponse(201, { message: "Profile created", profile });
+  // Query the item to retrieve the generated hashKey
+  const queryInput = {
+    TableName: TABLE_NAME,
+    IndexName: USERID_GSI_NAME,
+    KeyConditionExpression: "userId = :uid",
+    ExpressionAttributeValues: {
+      ":uid": { S: profile.userId },
+    },
+    Limit: 1,
+  };
+
+  const result = await ddbDocClient.send(new QueryCommand(queryInput));
+
+  if (!result.Items || result.Items.length === 0) {
+    return errorResponse(500, "Failed to retrieve profile after creation.");
+  }
+
+  const item = result.Items[0];
+
+  const enrichedProfile = {
+    ...profile,
+    hashKey: item.hashKey?.N || null, // ✅ Retrieve the generated hashKey
+    rangeKey: profile.userId,         // ✅ Use userId as the rangeKey
+  };
+
+  return successResponse(201, { message: "Profile created", profile: enrichedProfile });
 }
+// /**
+//  * Create a new user profile (POST)
+//  * - Uses `putPoint` so dynamodb-geo calculates numeric geohash & hashKey
+//  */
+// async function createProfile(event: APIGatewayEvent) {
+//   if (!event.body) {
+//     return errorResponse(400, "Missing request body");
+//   }
+
+//   const profile: GeoUserProfile = JSON.parse(event.body);
+//   if (!profile.userId) {
+//     return errorResponse(400, "Missing userId");
+//   }
+//   if (profile.lat === undefined || profile.lng === undefined) {
+//     return errorResponse(400, "Missing lat/lng");
+//   }
+
+//   // Add timestamps
+//   const now = new Date().toISOString();
+//   profile.createdAt = now;
+//   profile.updatedAt = now;
+
+//   // fallback for arrays
+//   profile.availability = profile.availability ?? [];
+//   // CHANGED: fallback for lookingFor
+//   profile.lookingFor = profile.lookingFor ?? [];
+
+//   // Insert with `putPoint`
+//   await geoDataManager.putPoint({
+//     RangeKeyValue: { S: profile.userId }, // sort key
+//     GeoPoint: {
+//       latitude: profile.lat,
+//       longitude: profile.lng,
+//     },
+//     PutItemInput: {
+//       Item: marshall(profile), // convert JS object to raw DynamoDB shape
+//     },
+//   });
+
+//   return successResponse(201, { message: "Profile created", profile });
+// }
 
 /**
  * Get a single user by userId (GET?userId=xxx)

@@ -19,7 +19,7 @@ import { generateClient } from 'aws-amplify/data';
 import { getCognitoUserId } from '../utils/auth';
 import type { Schema } from '../../amplify/data/resource';
 import { motion, AnimatePresence } from 'framer-motion';
-import geohash from 'ngeohash'; // Ensure you install this package
+// import geohash from 'ngeohash'; // Ensure you install this package
 import '../styles/SignupForm.css';
 
 const client = generateClient<Schema>();
@@ -58,8 +58,6 @@ const SignupForm: React.FC = () => {
         lookingFor: transformObjectToArray(data.lookingFor),
         kids: data.kids,
         drinking: data.drinking,
-        geohash: geohash.encode(data.lat, data.lng),
-        rangeKey: Date.now().toString(),
         lat: data.lat,
         lng: data.lng,
         hobbies: transformObjectToArray(data.hobbies),
