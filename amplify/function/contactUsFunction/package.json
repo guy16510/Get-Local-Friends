@@ -1,10 +1,11 @@
 {
   "name": "contact-us-function",
   "version": "1.0.0",
-  "description": "Lambda function for Contact Us API",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build:clean": "npm run clean && npm run build"
   },
   "dependencies": {
     "aws-sdk": "^2.1030.0"

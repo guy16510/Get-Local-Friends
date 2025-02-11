@@ -1,8 +1,8 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
-import { handler as contactUsFunction } from './function/contactUsFunction/src/index';
-import { handler as geoSpatialFunction } from './function/geoSpatialFunction/src/index';
-// import { handler as chatFunction } from './function/chatFunction/src/index';
+import { handler as contactUsFunction } from './function/contactUsFunction/dist/index';
+import { handler as geoSpatialFunction } from './function/geoSpatialFunction/dist/index';
+import { handler as chatFunction } from './function/chatFunction/dist/index';
 
 const functionsFactory = {
   getInstance() {
@@ -10,7 +10,7 @@ const functionsFactory = {
       resources: {
         contactUs: contactUsFunction,
         geoSpatial: geoSpatialFunction,
-        // chat: chatFunction,
+        chat: chatFunction,
       },
     };
   },
