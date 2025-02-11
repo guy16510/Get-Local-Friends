@@ -9,12 +9,13 @@
   },
   "main": "dist/index.js",
   "dependencies": {
+    "@types/ngeohash": "^0.6.8",
     "aws-sdk": "^2.1030.0",
     "ngeohash": "^0.6.3"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.92",
-    "typescript": "5.7.3",
-    "@types/node": "^18.19.0"
+    "@types/node": "^18.19.0",
+    "typescript": "5.7.3"
   }
 }
