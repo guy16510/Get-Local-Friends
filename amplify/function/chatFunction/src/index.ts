@@ -1,7 +1,7 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { DynamoDB } from 'aws-sdk';
+import AWS from 'aws-sdk';
 
-const dynamoDB = new DynamoDB.DocumentClient();
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = process.env.CHAT_TABLE_NAME || 'Chat';
 
 export const handler = async (
