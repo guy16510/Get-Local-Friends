@@ -3,13 +3,11 @@ backend:
   phases:
     preBuild:
       commands:
-        # Install dependencies for each function
         - cd function/contactUsFunction && npm ci && cd ../../
         - cd function/geoSpatialFunction && npm ci && cd ../../
         - cd function/chatFunction && npm ci && cd ../../
     build:
       commands:
-        # Build (clean + compile) each function
         - cd function/contactUsFunction && npm run build:clean && cd ../../
         - cd function/geoSpatialFunction && npm run build:clean && cd ../../
         - cd function/chatFunction && npm run build:clean && cd ../../
