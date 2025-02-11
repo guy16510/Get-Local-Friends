@@ -1,0 +1,16 @@
+{
+  "name": "contact-us-function",
+  "version": "1.0.0",
+  "description": "Lambda function for Contact Us API",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1030.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.92",
+    "typescript": "^4.9.0"
+  }
+}

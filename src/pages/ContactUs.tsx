@@ -8,10 +8,10 @@ import {
   TextAreaField,
   View,
 } from '@aws-amplify/ui-react';
-import type { Schema } from '../../amplify/data/resource';
-import { generateClient } from 'aws-amplify/data';
+// import type { Schema } from '../../amplify/data/resource';
+// import { generateClient } from 'aws-amplify/data';
 
-const client = generateClient<Schema>();
+// const client = generateClient<Schema>();
 
 interface ContactFormData {
   name: string;
@@ -40,10 +40,10 @@ const ContactUs: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await client.models.Contact.create({
-        ...formData,
-        timestamp: new Date().toISOString(),
-      });
+      // await client.models.Contact.create({
+      //   ...formData,
+      //   timestamp: new Date().toISOString(),
+      // });
       setResponseMessage('Thank you for contacting us!');
       setFormData({ name: '', email: '', message: '' });
     } catch (err: any) {

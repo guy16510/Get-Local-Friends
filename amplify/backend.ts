@@ -1,25 +1,22 @@
 import { defineBackend } from '@aws-amplify/backend';
-import { data } from './data/resource';
 import { auth } from './auth/resource';
-import { GeoUserProfileFunction } from './functions/geoUserProfile/resource';
-import { contactFunction } from './functions/contact/resource';
-import { directMessageFunction } from './functions/directMessage/resource'; // Import the directMessage function
-
+import { handler as contactUsFunction } from './function/contactUsFunction/src/index';
+import { handler as geoSpatialFunction } from './function/geoSpatialFunction/src/index';
+// import { handler as chatFunction } from './function/chatFunction/src/index';
 
 const functionsFactory = {
   getInstance() {
     return {
       resources: {
-        GeoUserProfile: GeoUserProfileFunction,
-        contact: contactFunction,
-        directMessage: directMessageFunction, // Add the directMessage function
+        contactUs: contactUsFunction,
+        geoSpatial: geoSpatialFunction,
+        // chat: chatFunction,
       },
     };
   },
 };
 
-defineBackend({
-  data,
-  functions: functionsFactory,
+export default defineBackend({
   auth,
+  functions: functionsFactory,
 });
