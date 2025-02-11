@@ -4,7 +4,7 @@ import { DynamoDB } from 'aws-sdk';
 const dynamoDB = new DynamoDB.DocumentClient();
 const TABLE_NAME = process.env.CHAT_TABLE_NAME || 'Chat';
 
-exports.handler = async (
+export const handler = async (
   event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyResultV2> => {
   try {

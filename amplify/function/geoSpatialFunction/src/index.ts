@@ -5,7 +5,7 @@ const ses = new SES();
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'your-verified-email@domain.com';
 const RECIPIENT_EMAIL = process.env.RECIPIENT_EMAIL || 'your-support@domain.com';
 
-exports.handler = async (
+export const handler = async (
   event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyResultV2> => {
   try {
