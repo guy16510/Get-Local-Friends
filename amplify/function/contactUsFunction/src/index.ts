@@ -1,7 +1,7 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { SES } from 'aws-sdk';
+import AWS from 'aws-sdk';
 
-const ses = new SES();
+const ses = new AWS.SES();
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'your-verified-email@domain.com';
 const RECIPIENT_EMAIL = process.env.RECIPIENT_EMAIL || 'your-support@domain.com';
 
