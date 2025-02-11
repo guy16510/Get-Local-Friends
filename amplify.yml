@@ -3,9 +3,9 @@ backend:
   phases:
     preBuild:
       commands:
-        - cd amplify/function/contactUsFunction && npm ci && cd ../../../
-        - cd amplify/function/geoSpatialFunction && npm ci && cd ../../../
-        - cd amplify/function/chatFunction && npm ci && cd ../../../
+        - cd amplify/function/contactUsFunction && npm install && cd ../../../
+        - cd amplify/function/geoSpatialFunction && npm install && cd ../../../
+        - cd amplify/function/chatFunction && npm install && cd ../../../
     build:
       commands:
         - cd amplify/function/contactUsFunction && npm run build:clean && cd ../../../
