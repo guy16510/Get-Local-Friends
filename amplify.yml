@@ -3,14 +3,14 @@ backend:
   phases:
     preBuild:
       commands:
-        - cd function/contactUsFunction && npm ci && cd ../../
-        - cd function/geoSpatialFunction && npm ci && cd ../../
-        - cd function/chatFunction && npm ci && cd ../../
+        - cd amplify/function/contactUsFunction && npm ci && cd ../../../
+        - cd amplify/function/geoSpatialFunction && npm ci && cd ../../../
+        - cd amplify/function/chatFunction && npm ci && cd ../../../
     build:
       commands:
-        - cd function/contactUsFunction && npm run build:clean && cd ../../
-        - cd function/geoSpatialFunction && npm run build:clean && cd ../../
-        - cd function/chatFunction && npm run build:clean && cd ../../
+        - cd amplify/function/contactUsFunction && npm run build:clean && cd ../../../
+        - cd amplify/function/geoSpatialFunction && npm run build:clean && cd ../../../
+        - cd amplify/function/chatFunction && npm run build:clean && cd ../../../
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
