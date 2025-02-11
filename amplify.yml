@@ -1,9 +1,18 @@
 version: 1
 backend:
   phases:
+    preBuild:
+      commands:
+        # Install dependencies for each function
+        - cd function/contactUsFunction && npm ci && cd ../../
+        - cd function/geoSpatialFunction && npm ci && cd ../../
+        - cd function/chatFunction && npm ci && cd ../../
     build:
       commands:
-        - npm ci --cache .npm --prefer-offline
+        # Build (clean + compile) each function
+        - cd function/contactUsFunction && npm run build:clean && cd ../../
+        - cd function/geoSpatialFunction && npm run build:clean && cd ../../
+        - cd function/chatFunction && npm run build:clean && cd ../../
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:

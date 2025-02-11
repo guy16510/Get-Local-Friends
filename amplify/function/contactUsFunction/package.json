@@ -2,7 +2,7 @@
     "name": "contact-us-function",
     "version": "1.0.0",
     "description": "Lambda function for API",
-    "main": "dist/index.ts",
+    "main": "dist/index.js",
     "scripts": {
       "build": "tsc",
       "clean": "rm -rf dist",
