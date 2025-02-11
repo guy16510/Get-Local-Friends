@@ -18,8 +18,8 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   const method = event.httpMethod;
-  const pathParams = event.pathParameters;
-  const queryParams = event.queryStringParameters;
+  const pathParams = event.pathParameters || {};
+  const queryParams = event.queryStringParameters || {};
 
   try {
     if (method === "POST") {
