@@ -2,7 +2,7 @@
     "name": "geo-spatial-function",
     "version": "1.0.0",
     "description": "Lambda function for API",
-    "main": "dist/index.js",
+    "main": "dist/index.ts",
     "scripts": {
       "build": "tsc",
       "clean": "rm -rf dist",
