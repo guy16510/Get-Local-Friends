@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ES2022",                      // Required for 'bundler' resolution
-    "moduleResolution": "bundler",           // TypeScript 5.x compatible
+    "module": "NodeNext",        // Changed to NodeNext for better Node.js 18 compatibility
+    "moduleResolution": "NodeNext", // Changed to NodeNext to match module
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
