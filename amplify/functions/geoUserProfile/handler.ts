@@ -1,15 +1,13 @@
 import { APIGatewayEvent, Context } from "aws-lambda";
-import { DynamoDB } from "@aws-sdk/client-dynamodb";  // ✅ Correct client
+import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { GeoDataManagerConfiguration, GeoDataManager } from "dynamodb-geo-v3";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
-// Configuration
 const REGION = "us-east-1";
 const TABLE_NAME = "GeoUserProfileTable";
 const USERID_GSI_NAME = "userId-index";
 
-// User Profile Interface
 interface GeoUserProfile {
   userId?: string;
   lat?: number;
@@ -33,11 +31,9 @@ interface GeoUserProfile {
   rangeKey?: string;
 }
 
-// DynamoDB Clients
-const rawClient = new DynamoDB({ region: REGION });  // ✅ Correct client
+const rawClient = new DynamoDB({ region: REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(rawClient);
 
-// Geo Data Manager Setup
 const geoConfig = new GeoDataManagerConfiguration(rawClient as any, TABLE_NAME);
 geoConfig.hashKeyLength = 3;
 const geoDataManager = new GeoDataManager(geoConfig);
@@ -68,23 +64,21 @@ async function createProfile(event: APIGatewayEvent) {
   if (!event.body) return errorResponse(400, "Missing request body");
 
   const profile: GeoUserProfile = JSON.parse(event.body);
+  console.log("API invoked...")
   if (!profile.userId) return errorResponse(400, "Missing userId");
   if (profile.lat === undefined || profile.lng === undefined)
     return errorResponse(400, "Missing lat/lng");
 
-  // Timestamps
   const now = new Date().toISOString();
   profile.createdAt = now;
   profile.updatedAt = now;
 
-  // Insert using `putPoint`
   await geoDataManager.putPoint({
     RangeKeyValue: { S: profile.userId },
     GeoPoint: { latitude: profile.lat, longitude: profile.lng },
     PutItemInput: { Item: marshall(profile) },
   });
 
-  // Query to retrieve the generated hashKey
   const queryInput = {
     TableName: TABLE_NAME,
     IndexName: USERID_GSI_NAME,
@@ -92,19 +86,21 @@ async function createProfile(event: APIGatewayEvent) {
     ExpressionAttributeValues: { ":uid": { S: profile.userId } },
     Limit: 1,
   };
+  console.log("queryInput:" + queryInput);
 
   const result = await ddbDocClient.send(new QueryCommand(queryInput));
   if (!result.Items || result.Items.length === 0)
     return errorResponse(500, "Failed to retrieve profile after creation.");
 
   const item = result.Items[0];
+  console.log("item submitted:" + item);
 
   const enrichedProfile = {
     ...profile,
     hashKey: item.hashKey?.N ? parseFloat(item.hashKey.N) : null,
     rangeKey: item.rangeKey?.S || profile.userId,
   };
-
+  console.log("enrichedProfile" + enrichedProfile)
   return successResponse(201, { message: "Profile created", profile: enrichedProfile });
 }
 
