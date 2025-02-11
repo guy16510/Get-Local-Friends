@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "NodeNext",                      // ✅ Correct setting
+    "moduleResolution": "NodeNext",           // ✅ Matches with module
     "resolveJsonModule": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
@@ -12,9 +13,7 @@
     "declarationMap": true,
     "outDir": "dist",
     "paths": {
-      "$amplify/*": [
-        "../.amplify/generated/*"
-      ]
+      "$amplify/*": ["../.amplify/generated/*"]
     },
     "allowJs": true,
     "isolatedModules": true,
@@ -24,14 +23,6 @@
     "baseUrl": ".",
     "rootDir": "."
   },
-  "include": [
-    "function/**/*",
-    "auth/**/*",
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".amplify"
-  ]
+  "include": ["function/**/*", "auth/**/*", "src/**/*"],
+  "exclude": ["node_modules", "dist", ".amplify"]
 }

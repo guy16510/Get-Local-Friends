@@ -7,12 +7,13 @@
     "clean": "rm -rf dist",
     "build:clean": "npm run clean && npm run build"
   },
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "dependencies": {
     "@types/ngeohash": "^0.6.8",
     "aws-sdk": "^2.1030.0",
     "ngeohash": "^0.6.3"
   },
+  "type": "module",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.92",
     "@types/node": "^18.19.0",

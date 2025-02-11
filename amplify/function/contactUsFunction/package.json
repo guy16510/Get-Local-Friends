@@ -7,6 +7,8 @@
     "clean": "rm -rf dist",
     "build:clean": "npm run clean && npm run build"
   },
+  "main": "src/index.js",
+  "type": "module",
   "dependencies": {
     "aws-sdk": "^2.1030.0"
   },

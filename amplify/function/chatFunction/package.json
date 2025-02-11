@@ -2,11 +2,13 @@
   "name": "chat-function",
   "version": "1.0.0",
   "description": "Lambda function for chat",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
     "build:clean": "npm run clean && npm run build"
   },
+  "main": "src/index.js",
   "dependencies": {
     "aws-sdk": "^2.1030.0"
   },
