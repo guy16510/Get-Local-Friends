@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2020",                      // Downgraded for AWS Lambda compatibility
-    "module": "CommonJS",                    // AWS Lambda prefers CommonJS
-    "moduleResolution": "bundler",           // Kept as-is from your original config
+    "target": "ES2022",
+    "module": "ES2022",                      // Required for 'bundler' resolution
+    "moduleResolution": "bundler",           // TypeScript 5.x compatible
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true,                    // Ignore type issues in node_modules
-    "declaration": true,                     // Generate .d.ts files
-    "declarationMap": true,                  // Better debugging support
-    "outDir": "dist",                        // Compile output folder
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist",
     "paths": {
       "$amplify/*": [
         "../.amplify/generated/*"
