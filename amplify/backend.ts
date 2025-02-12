@@ -1,6 +1,7 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
-import { Function } from '@aws-amplify/backend-function';
+import { createFunction } from '@aws-amplify/backend-function';
+import { ResourceProvider } from '@aws-amplify/backend-function';
 
 // Get the environment name and ensure AWS environment variables are available
 const envName = process.env.USER_BRANCH || 'dev';
@@ -9,50 +10,52 @@ if (!process.env.AWS_REGION || !process.env.AWS_ACCOUNT_ID) {
 }
 
 // Define the schema for your tables
-const schema = {
-  version: '1',
-  tables: {
-    Chat: {
-      primaryIndex: {
-        partitionKey: { name: 'messageId', type: 'string' },
-        sortKey: { name: 'timestamp', type: 'string' }
-      },
-      secondaryIndexes: {
-        bySenderReceiver: {
-          partitionKey: { name: 'senderId', type: 'string' },
-          sortKey: { name: 'receiverId', type: 'string' }
+const tables = {
+  getInstance: () => ({
+    version: '1',
+    tables: {
+      Chat: {
+        primaryIndex: {
+          partitionKey: { name: 'messageId', type: 'string' },
+          sortKey: { name: 'timestamp', type: 'string' }
+        },
+        secondaryIndexes: {
+          bySenderReceiver: {
+            partitionKey: { name: 'senderId', type: 'string' },
+            sortKey: { name: 'receiverId', type: 'string' }
+          }
+        },
+        ttl: {
+          attributeName: 'ttl'
         }
       },
-      ttl: {
-        attributeName: 'ttl'
-      }
-    },
-    Contact: {
-      primaryIndex: {
-        partitionKey: { name: 'contactId', type: 'string' },
-        sortKey: { name: 'createdAt', type: 'string' }
-      }
-    },
-    GeoSpatial: {
-      primaryIndex: {
-        partitionKey: { name: 'userId', type: 'string' },
-        sortKey: { name: 'geohash', type: 'string' }
-      },
-      secondaryIndexes: {
-        byGeohash: {
-          partitionKey: { name: 'geohash', type: 'string' },
-          sortKey: { name: 'userId', type: 'string' }
+      Contact: {
+        primaryIndex: {
+          partitionKey: { name: 'contactId', type: 'string' },
+          sortKey: { name: 'createdAt', type: 'string' }
         }
       },
-      ttl: {
-        attributeName: 'ttl'
+      GeoSpatial: {
+        primaryIndex: {
+          partitionKey: { name: 'userId', type: 'string' },
+          sortKey: { name: 'geohash', type: 'string' }
+        },
+        secondaryIndexes: {
+          byGeohash: {
+            partitionKey: { name: 'geohash', type: 'string' },
+            sortKey: { name: 'userId', type: 'string' }
+          }
+        },
+        ttl: {
+          attributeName: 'ttl'
+        }
       }
     }
-  }
+  })
 };
 
 // Define Functions
-const contactUsFunction = new Function('contactUsFunction', {
+const contactUsFunction = createFunction('contactUsFunction', {
   handler: './function/contactUsFunction/src/index.ts',
   environment: {
     CONTACT_TABLE_NAME: `${envName}-Contact`,
@@ -82,7 +85,7 @@ const contactUsFunction = new Function('contactUsFunction', {
   }]
 });
 
-const geoSpatialFunction = new Function('geoSpatialFunction', {
+const geoSpatialFunction = createFunction('geoSpatialFunction', {
   handler: './function/geoSpatialFunction/src/index.ts',
   environment: {
     LOCATIONS_TABLE_NAME: `${envName}-GeoSpatial`,
@@ -103,7 +106,7 @@ const geoSpatialFunction = new Function('geoSpatialFunction', {
   }]
 });
 
-const chatFunction = new Function('chatFunction', {
+const chatFunction = createFunction('chatFunction', {
   handler: './function/chatFunction/src/index.ts',
   environment: {
     CHAT_TABLE_NAME: `${envName}-Chat`,
@@ -124,12 +127,14 @@ const chatFunction = new Function('chatFunction', {
   }]
 });
 
-export default defineBackend({
+const backend = defineBackend({
   auth,
-  schema,
-  functions: {
+  tables,
+  resources: {
     contactUsFunction,
     geoSpatialFunction,
     chatFunction
   }
 });
+
+export default backend;
