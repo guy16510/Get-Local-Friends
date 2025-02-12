@@ -7,7 +7,7 @@ const itemSchema = a.model({
   description: a.string(),
   createdAt: a.datetime(),
   updatedAt: a.datetime(),
-}).authorization((allow) => [allow.publicApiKey()]);
+}).authorization([a.allow.public()]);
 
 // Then define the complete schema using the item model
 const schema = a.schema({
@@ -17,13 +17,13 @@ const schema = a.schema({
   listItems: a
     .query()
     .returns([itemSchema])
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization([a.allow.public()]),
 
   getItem: a
     .query()
     .arguments({ id: a.string() })
     .returns(itemSchema)
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization([a.allow.public()]),
 
   // Mutations
   createItem: a
@@ -33,7 +33,7 @@ const schema = a.schema({
       description: a.string() 
     })
     .returns(itemSchema)
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization([a.allow.public()]),
 
   updateItem: a
     .mutation()
@@ -43,18 +43,18 @@ const schema = a.schema({
       description: a.string(),
     })
     .returns(itemSchema)
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization([a.allow.public()]),
 
   deleteItem: a
     .mutation()
     .arguments({ id: a.string() })
     .returns(itemSchema)
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization([a.allow.public()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
 
-export const data = defineData({
+export const data: ReturnType<typeof defineData> = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: "apiKey",
