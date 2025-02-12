@@ -1,11 +1,17 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import AWS from 'aws-sdk';
+import { DynamoDB } from 'aws-sdk';
+import * as geohash from 'ngeohash';
 
-const ses = new AWS.SES();
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'your-verified-email@domain.com';
-const RECIPIENT_EMAIL = process.env.RECIPIENT_EMAIL || 'your-support@domain.com';
+const dynamoDB = new DynamoDB.DocumentClient({
+  region: process.env.AWS_REGION
+});
+const TABLE_NAME = process.env.LOCATIONS_TABLE_NAME;
 
-export const handler = async (
+if (!TABLE_NAME) {
+  throw new Error('LOCATIONS_TABLE_NAME environment variable must be set');
+}
+
+exports.handler = async (
   event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyResultV2> => {
   try {
@@ -23,52 +29,26 @@ export const handler = async (
       };
     }
 
-    const { name, email, message } = JSON.parse(event.body);
+    const { action, data } = JSON.parse(event.body);
 
-    if (!name || !email || !message) {
-      return {
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "*"
-        },
-        body: JSON.stringify({
-          message: "Missing required fields"
-        })
-      };
+    switch (action) {
+      case 'updateLocation':
+        return await updateLocation(data);
+      case 'findNearbyUsers':
+        return await findNearbyUsers(data);
+      default:
+        return {
+          statusCode: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*"
+          },
+          body: JSON.stringify({
+            message: "Invalid action"
+          })
+        };
     }
-
-    const params = {
-      Destination: {
-        ToAddresses: [RECIPIENT_EMAIL]
-      },
-      Message: {
-        Body: {
-          Text: {
-            Data: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`
-          }
-        },
-        Subject: {
-          Data: 'New Contact Form Submission'
-        }
-      },
-      Source: SENDER_EMAIL
-    };
-
-    await ses.sendEmail(params).promise();
-
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "*"
-      },
-      body: JSON.stringify({
-        message: "Message sent successfully"
-      })
-    };
   } catch (error) {
     console.error('Error:', error);
     return {

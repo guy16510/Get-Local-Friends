@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@aws-amplify/backend": "^1.4.0",
+    "@aws-amplify/backend-cli": "^1.4.0",
+    "@aws-amplify/backend-function": "^1.4.0",
+    "aws-sdk": "^2.1531.0",
+    "ngeohash": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.92",
+    "@types/node": "^18.19.0",
+    "typescript": "^5.0.0"
+  }
+}

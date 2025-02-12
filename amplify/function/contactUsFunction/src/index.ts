@@ -1,11 +1,20 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import AWS from 'aws-sdk';
+import { DynamoDB, SES } from 'aws-sdk';
 
-const ses = new AWS.SES();
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'your-verified-email@domain.com';
-const RECIPIENT_EMAIL = process.env.RECIPIENT_EMAIL || 'your-support@domain.com';
+const dynamoDB = new DynamoDB.DocumentClient({
+  region: process.env.AWS_REGION
+});
+const ses = new SES({ region: process.env.AWS_REGION });
 
-export const handler = async (
+const TABLE_NAME = process.env.CONTACT_TABLE_NAME;
+const SENDER_EMAIL = process.env.SENDER_EMAIL;
+const RECIPIENT_EMAIL = process.env.RECIPIENT_EMAIL;
+
+if (!TABLE_NAME || !SENDER_EMAIL || !RECIPIENT_EMAIL) {
+  throw new Error('Required environment variables must be set');
+}
+
+exports.handler = async (
   event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyResultV2> => {
   try {
@@ -39,7 +48,21 @@ export const handler = async (
       };
     }
 
-    const params = {
+    // Save to DynamoDB
+    const contactId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    await dynamoDB.put({
+      TableName: TABLE_NAME,
+      Item: {
+        contactId,
+        name,
+        email,
+        message,
+        createdAt: new Date().toISOString()
+      }
+    }).promise();
+
+    // Send email
+    await ses.sendEmail({
       Destination: {
         ToAddresses: [RECIPIENT_EMAIL]
       },
@@ -54,9 +77,7 @@ export const handler = async (
         }
       },
       Source: SENDER_EMAIL
-    };
-
-    await ses.sendEmail(params).promise();
+    }).promise();
 
     return {
       statusCode: 200,
@@ -66,7 +87,8 @@ export const handler = async (
         "Access-Control-Allow-Headers": "*"
       },
       body: JSON.stringify({
-        message: "Message sent successfully"
+        message: "Message sent successfully",
+        contactId
       })
     };
   } catch (error) {

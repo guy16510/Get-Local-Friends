@@ -1,10 +1,16 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import AWS from 'aws-sdk';
+import { DynamoDB } from 'aws-sdk';
 
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-const TABLE_NAME = process.env.CHAT_TABLE_NAME || 'Chat';
+const dynamoDB = new DynamoDB.DocumentClient({
+  region: process.env.AWS_REGION
+});
+const TABLE_NAME = process.env.CHAT_TABLE_NAME;
 
-export const handler = async (
+if (!TABLE_NAME) {
+  throw new Error('CHAT_TABLE_NAME environment variable must be set');
+}
+
+exports.handler = async (
   event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyResultV2> => {
   try {
@@ -58,6 +64,7 @@ export const handler = async (
   }
 };
 
+
 async function sendMessage(data: { 
   senderId: string; 
   receiverId: string; 
@@ -66,7 +73,7 @@ async function sendMessage(data: {
   const timestamp = new Date().toISOString();
   const messageId = `${data.senderId}_${data.receiverId}_${timestamp}`;
 
-  const params = {
+  const params: any= {
     TableName: TABLE_NAME,
     Item: {
       messageId,
@@ -97,7 +104,7 @@ async function getMessages(data: {
   userId1: string;
   userId2: string;
 }): Promise<APIGatewayProxyResultV2> {
-  const params = {
+  const params: any = {
     TableName: TABLE_NAME,
     FilterExpression: "(senderId = :uid1 AND receiverId = :uid2) OR (senderId = :uid2 AND receiverId = :uid1)",
     ExpressionAttributeValues: {
