@@ -1,140 +1,107 @@
-import { defineBackend } from '@aws-amplify/backend';
-import { auth } from './auth/resource';
-import { createFunction } from '@aws-amplify/backend-function';
-import { ResourceProvider } from '@aws-amplify/backend-function';
-
-// Get the environment name and ensure AWS environment variables are available
-const envName = process.env.USER_BRANCH || 'dev';
-if (!process.env.AWS_REGION || !process.env.AWS_ACCOUNT_ID) {
-  throw new Error('AWS_REGION and AWS_ACCOUNT_ID environment variables must be set');
-}
-
-// Define the schema for your tables
-const tables = {
-  getInstance: () => ({
-    version: '1',
-    tables: {
-      Chat: {
-        primaryIndex: {
-          partitionKey: { name: 'messageId', type: 'string' },
-          sortKey: { name: 'timestamp', type: 'string' }
-        },
-        secondaryIndexes: {
-          bySenderReceiver: {
-            partitionKey: { name: 'senderId', type: 'string' },
-            sortKey: { name: 'receiverId', type: 'string' }
-          }
-        },
-        ttl: {
-          attributeName: 'ttl'
-        }
-      },
-      Contact: {
-        primaryIndex: {
-          partitionKey: { name: 'contactId', type: 'string' },
-          sortKey: { name: 'createdAt', type: 'string' }
-        }
-      },
-      GeoSpatial: {
-        primaryIndex: {
-          partitionKey: { name: 'userId', type: 'string' },
-          sortKey: { name: 'geohash', type: 'string' }
-        },
-        secondaryIndexes: {
-          byGeohash: {
-            partitionKey: { name: 'geohash', type: 'string' },
-            sortKey: { name: 'userId', type: 'string' }
-          }
-        },
-        ttl: {
-          attributeName: 'ttl'
-        }
-      }
-    }
-  })
-};
-
-// Define Functions
-const contactUsFunction = createFunction('contactUsFunction', {
-  handler: './function/contactUsFunction/src/index.ts',
-  environment: {
-    CONTACT_TABLE_NAME: `${envName}-Contact`,
-    SENDER_EMAIL: process.env.SENDER_EMAIL || 'your-verified-email@domain.com',
-    RECIPIENT_EMAIL: process.env.RECIPIENT_EMAIL || 'your-support@domain.com',
-    AWS_REGION: process.env.AWS_REGION || '',
-    AWS_ACCOUNT_ID: process.env.AWS_ACCOUNT_ID || ''
-  },
-  permissions: [{
-    actions: [
-      'ses:SendEmail',
-      'ses:SendRawEmail'
-    ],
-    resources: ['*']
-  },
-  {
-    actions: [
-      'dynamodb:PutItem',
-      'dynamodb:GetItem',
-      'dynamodb:Query',
-      'dynamodb:Scan'
-    ],
-    resources: [
-      `arn:aws:dynamodb:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:table/${envName}-Contact`,
-      `arn:aws:dynamodb:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:table/${envName}-Contact/index/*`
-    ]
-  }]
-});
-
-const geoSpatialFunction = createFunction('geoSpatialFunction', {
-  handler: './function/geoSpatialFunction/src/index.ts',
-  environment: {
-    LOCATIONS_TABLE_NAME: `${envName}-GeoSpatial`,
-    AWS_REGION: process.env.AWS_REGION || '',
-    AWS_ACCOUNT_ID: process.env.AWS_ACCOUNT_ID || ''
-  },
-  permissions: [{
-    actions: [
-      'dynamodb:PutItem',
-      'dynamodb:GetItem',
-      'dynamodb:Query',
-      'dynamodb:Scan'
-    ],
-    resources: [
-      `arn:aws:dynamodb:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:table/${envName}-GeoSpatial`,
-      `arn:aws:dynamodb:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:table/${envName}-GeoSpatial/index/*`
-    ]
-  }]
-});
-
-const chatFunction = createFunction('chatFunction', {
-  handler: './function/chatFunction/src/index.ts',
-  environment: {
-    CHAT_TABLE_NAME: `${envName}-Chat`,
-    AWS_REGION: process.env.AWS_REGION || '',
-    AWS_ACCOUNT_ID: process.env.AWS_ACCOUNT_ID || ''
-  },
-  permissions: [{
-    actions: [
-      'dynamodb:PutItem',
-      'dynamodb:GetItem',
-      'dynamodb:Query',
-      'dynamodb:Scan'
-    ],
-    resources: [
-      `arn:aws:dynamodb:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:table/${envName}-Chat`,
-      `arn:aws:dynamodb:${process.env.AWS_REGION}:${process.env.AWS_ACCOUNT_ID}:table/${envName}-Chat/index/*`
-    ]
-  }]
-});
+import { defineBackend } from "@aws-amplify/backend";
+import { Stack } from "aws-cdk-lib";
+import {
+  AuthorizationType,
+  CognitoUserPoolsAuthorizer,
+  Cors,
+  LambdaIntegration,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
+import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { myApiFunction } from "./functions/api-function/resource";
+import { auth } from "./auth/resource";
+import { data } from "./data/resource";
 
 const backend = defineBackend({
   auth,
-  tables,
-  resources: {
-    contactUsFunction,
-    geoSpatialFunction,
-    chatFunction
-  }
+  data,
+  myApiFunction,
 });
 
-export default backend;
+// create a new API stack
+const apiStack = backend.createStack("api-stack");
+
+// create a new REST API
+const myRestApi = new RestApi(apiStack, "RestApi", {
+  restApiName: "myRestApi",
+  deploy: true,
+  deployOptions: {
+    stageName: "dev",
+  },
+  defaultCorsPreflightOptions: {
+    allowOrigins: Cors.ALL_ORIGINS, // Restrict this to domains you trust
+    allowMethods: Cors.ALL_METHODS, // Specify only the methods you need to allow
+    allowHeaders: Cors.DEFAULT_HEADERS, // Specify only the headers you need to allow
+  },
+});
+
+// create a new Lambda integration
+const lambdaIntegration = new LambdaIntegration(
+  backend.myApiFunction.resources.lambda
+);
+
+// create a new resource path with IAM authorization
+const itemsPath = myRestApi.root.addResource("items", {
+  defaultMethodOptions: {
+    authorizationType: AuthorizationType.IAM,
+  },
+});
+
+// add methods you would like to create to the resource path
+itemsPath.addMethod("GET", lambdaIntegration);
+itemsPath.addMethod("POST", lambdaIntegration);
+itemsPath.addMethod("DELETE", lambdaIntegration);
+itemsPath.addMethod("PUT", lambdaIntegration);
+
+// add a proxy resource path to the API
+itemsPath.addProxy({
+  anyMethod: true,
+  defaultIntegration: lambdaIntegration,
+});
+
+// create a new Cognito User Pools authorizer
+const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, "CognitoAuth", {
+  cognitoUserPools: [backend.auth.resources.userPool],
+});
+
+// create a new resource path with Cognito authorization
+const booksPath = myRestApi.root.addResource("cognito-auth-path");
+booksPath.addMethod("GET", lambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
+// create a new IAM policy to allow Invoke access to the API
+const apiRestPolicy = new Policy(apiStack, "RestApiPolicy", {
+  statements: [
+    new PolicyStatement({
+      actions: ["execute-api:Invoke"],
+      resources: [
+        `${myRestApi.arnForExecuteApi("*", "/items", "dev")}`,
+        `${myRestApi.arnForExecuteApi("*", "/items/*", "dev")}`,
+        `${myRestApi.arnForExecuteApi("*", "/cognito-auth-path", "dev")}`,
+      ],
+    }),
+  ],
+});
+
+// attach the policy to the authenticated and unauthenticated IAM roles
+backend.auth.resources.authenticatedUserIamRole.attachInlinePolicy(
+  apiRestPolicy
+);
+backend.auth.resources.unauthenticatedUserIamRole.attachInlinePolicy(
+  apiRestPolicy
+);
+
+// add outputs to the configuration file
+backend.addOutput({
+  custom: {
+    API: {
+      [myRestApi.restApiName]: {
+        endpoint: myRestApi.url,
+        region: Stack.of(myRestApi).region,
+        apiName: myRestApi.restApiName,
+      },
+    },
+  },
+});

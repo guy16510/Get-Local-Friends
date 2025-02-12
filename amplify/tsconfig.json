@@ -1,28 +1,41 @@
+// amplify/tsconfig.json
 {
   "compilerOptions": {
     "target": "ES2022",
-   "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "resolveJsonModule": true,
+    "module": "ES2022",
+    "lib": ["es2022", "dom"],
+    "moduleResolution": "node",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
     "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "declaration": true,
-    "declarationMap": true,
+    "resolveJsonModule": true,
+    "rootDir": ".",
     "outDir": "dist",
-    "paths": {
-      "$amplify/*": ["../.amplify/generated/*"]
-    },
-    "allowJs": true,
-    "isolatedModules": true,
-    "noEmit": false,
-    "types": ["node"],
-    "lib": ["ES2022", "DOM"],
     "baseUrl": ".",
-    "rootDir": "."
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "types": ["node"]
   },
-  "include": ["function/**/*", "auth/**/*", "src/**/*"],
-  "exclude": ["node_modules", "dist", ".amplify"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".amplify"
+  ]
 }

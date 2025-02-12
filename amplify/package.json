@@ -1,14 +1,13 @@
 {
-  "dependencies": {
-    "@aws-amplify/backend": "^0.5.0",
-    "@aws-amplify/backend-cli": "^0.5.0",
-    "@aws-amplify/backend-function": "^0.5.0",
-    "aws-sdk": "^2.1531.0",
-    "ngeohash": "^0.6.3"
-  },
-  "devDependencies": {
-    "@types/aws-lambda": "^8.10.92",
-    "@types/node": "^18.19.0",
-    "typescript": "^5.0.0"
-  }
+  "type": "module",
+    "dependencies": {
+      "@aws-amplify/api": "^6.0.0",
+      "@aws-amplify/auth": "^6.0.0",
+      "aws-amplify": "^6.0.0"
+    },
+    "devDependencies": {
+      "@types/aws-lambda": "^8.10.125",
+      "@aws-amplify/backend": "^0.6.0",
+      "@aws-amplify/backend-api": "^0.6.0"
+    } 
 }
