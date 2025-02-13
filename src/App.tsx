@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import Footer from './components/Footer';
 import LoginPage from './pages/LoginPage';
+import TestPage from './pages/TestPage';
 
 const App: React.FC = () => {
   const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
@@ -36,6 +37,7 @@ const App: React.FC = () => {
             }
           />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="/test" element={<TestPage />} />
           <Route
             path="/profile"
             element={
