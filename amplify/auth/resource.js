@@ -12,8 +12,4 @@ export const auth = defineAuth({
   loginWith: {
     email: true,
   },
-  // Optionally, add additional auth configuration here, for example:
-  // signUpAttributes: ['email'],
-  // passwordPolicy: { minimumLength: 8, requireSymbols: true },
-  // mfa: { enabled: false }
 });

@@ -3,10 +3,10 @@ backend:
   phases:
     preBuild:
       commands:
-        - cd amplify/functions/crud-api && npm install && cd ../../../
+        - cd amplify && npm install
+        - cd functions/itemsApi && npm install && cd ../../
     build:
       commands:
-        - cd amplify/functions/crud-api && npm run build:clean && cd ../../../
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
@@ -20,3 +20,5 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+      - amplify/node_modules/**/*
+      - amplify/functions/itemsApi/node_modules/**/*

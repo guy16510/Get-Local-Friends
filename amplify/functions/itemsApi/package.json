@@ -1,0 +1,16 @@
+{
+  "name": "items-api",
+  "version": "1.0.0",
+  "description": "CRUD API for items",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "aws-sdk": "^2.1499.0"
+  },
+  "devDependencies": {
+    "aws-cdk-lib": "^2.88.0",
+    "@aws-cdk/aws-apigateway": "^1.204.0",
+    "@aws-cdk/aws-iam": "^1.204.0"
+  }
+}
