@@ -4,7 +4,7 @@ backend:
     preBuild:
       commands:
         - npm install -g @aws-amplify/cli
-        - amplify pull --app-id $AWS_APP_ID --env $AWS_BRANCH --yes
+        - npx amplify pull --app-id $AWS_APP_ID --env $AWS_BRANCH --yes
         - cd amplify && npm install
         - cd functions/itemsApi && npm install && cd ../../
     build:
