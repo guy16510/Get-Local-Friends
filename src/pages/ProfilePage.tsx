@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as API from '@aws-amplify/api-rest';
 
 const Profile: React.FC = () => {
   const [userId, setUserId] = useState('');
@@ -8,11 +9,18 @@ const Profile: React.FC = () => {
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Fetch using geo-api's userId lookup (ensure a GSI exists)
-      const response = await fetch(`/geo?userId=${encodeURIComponent(userId)}`);
-      const data = await response.json();
-      // Assume data.data is an array of profile objects.
-      setProfile(data.data ? data.data[0] : null);
+      const restOperation = API.get({
+        apiName: 'myRestApi',
+        path: `geo?userId=${encodeURIComponent(userId)}`,
+      });
+      
+      // Wait for the response and then extract its body.
+      const { body } = await restOperation.response;
+      const response = await body.json();
+      
+      // Assume that the response contains a "data" property which is an array
+      // of profiles. Otherwise, adjust as needed.
+      setProfile(response);
       setMessage('Profile loaded.');
     } catch (error) {
       setMessage('Error loading profile.');
