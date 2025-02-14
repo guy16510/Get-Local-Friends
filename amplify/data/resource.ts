@@ -11,8 +11,7 @@ const schema = a.schema({
       userId: a.string(),
       // Additional fields can be added here.
     })
-    // Cast `allow` to any so that we can call .iam()
-    .authorization((allow) => [(allow as any).iam()]),
+    .authorization((allow) => [allow.publicApiKey()]),
 
   // Table for the Contact API.
   Contact: a
@@ -21,7 +20,7 @@ const schema = a.schema({
       name: a.string(),
       summary: a.string(),
     })
-    .authorization((allow) => [(allow as any).iam()]),
+    .authorization((allow) => [allow.publicApiKey()]),
 
   // Table for the Chat API.
   Chat: a
@@ -31,7 +30,7 @@ const schema = a.schema({
       message: a.string(),
       timestamp: a.datetime(),
     })
-    .authorization((allow) => [(allow as any).iam()]),
+    .authorization((allow) => [allow.publicApiKey()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
