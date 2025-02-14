@@ -1,52 +1,95 @@
-// src/components/ChatApp.tsx
 import React, { useState, useEffect } from 'react';
-import { getConversations } from '../services/chatService';
-import ConversationList from '../components/ConversationList';
-import MessageList from '../components/MessageList';
-import MessageInput from '../components/MessageInput';
 
-interface User {
-  id: string;
-  name: string;
+interface ChatMessage {
+  senderId: string;
+  receiverId: string;
+  message: string;
+  timestamp: number;
 }
 
-interface Conversation {
-  id: string;
-  user1Id: string;
-  user2Id: string;
-}
+const Chat: React.FC = () => {
+  const [senderId, setSenderId] = useState('');
+  const [receiverId, setReceiverId] = useState('');
+  const [messageText, setMessageText] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [status, setStatus] = useState('');
 
-const ChatApp: React.FC<{ currentUser: User }> = ({ currentUser }) => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
+  const fetchMessages = async () => {
+    if (senderId && receiverId) {
+      try {
+        const response = await fetch(
+          `/chat?senderId=${encodeURIComponent(senderId)}&receiverId=${encodeURIComponent(receiverId)}`
+        );
+        const data = await response.json();
+        setMessages(data.data || []);
+      } catch (error) {
+        setStatus('Error fetching messages.');
+      }
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderId,
+          receiverId,
+          message: messageText,
+          timestamp: Date.now(),
+        }),
+      });
+      await response.json();
+      setStatus('Message sent!');
+      setMessageText('');
+      fetchMessages();
+    } catch (error) {
+      setStatus('Failed to send message.');
+    }
+  };
 
   useEffect(() => {
-    const fetchConversations = async () => {
-      const response: any = await getConversations(currentUser.id);
-      setConversations(response.data);
-    };
-    fetchConversations();
-  }, [currentUser.id]);
+    if (senderId && receiverId) {
+      fetchMessages();
+      const interval = setInterval(fetchMessages, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [senderId, receiverId]);
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <ConversationList
-        conversations={conversations}
-        onSelect={setActiveConversation}
-        currentUser={currentUser}
-      />
-      {activeConversation && (
-        <div className="flex flex-col w-full p-4">
-          <MessageList conversation={activeConversation} />
-          <MessageInput
-            conversation={activeConversation}
-            senderId={currentUser.id}
-            onMessageSent={() => setActiveConversation({ ...activeConversation })}
-          />
+    <div>
+      <h2>Chat</h2>
+      <div>
+        <label>Sender ID:</label>
+        <input value={senderId} onChange={(e) => setSenderId(e.target.value)} />
+      </div>
+      <div>
+        <label>Receiver ID:</label>
+        <input value={receiverId} onChange={(e) => setReceiverId(e.target.value)} />
+      </div>
+      <form onSubmit={handleSendMessage}>
+        <div>
+          <label>Message:</label>
+          <input value={messageText} onChange={(e) => setMessageText(e.target.value)} required />
         </div>
-      )}
+        <button type="submit">Send</button>
+      </form>
+      {status && <p>{status}</p>}
+      <div>
+        <h3>Chat Messages</h3>
+        <ul>
+          {messages.map((msg, index) => (
+            <li key={index}>
+              <strong>{msg.senderId}:</strong> {msg.message}{' '}
+              <em>({new Date(msg.timestamp).toLocaleTimeString()})</em>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };
 
-export default ChatApp;
+export default Chat;

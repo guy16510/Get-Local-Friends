@@ -19,6 +19,8 @@
  
  From the `seed-data` folder, run the scripts using...
  
- ---
- 
- *Note: Remove the leading "" from each line before saving this file as README.md.*
+```
+npx ts-node seed-geo.ts
+npx ts-node seed-contact.ts
+npx ts-node seed-chat.ts
+```

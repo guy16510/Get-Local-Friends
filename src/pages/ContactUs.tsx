@@ -1,92 +1,47 @@
-// src/components/ContactUs.tsx
-import React, { useState, ChangeEvent, FormEvent } from 'react';
-import {
-  Button,
-  Flex,
-  Heading,
-  TextField,
-  TextAreaField,
-  View,
-} from '@aws-amplify/ui-react';
-// import type { Schema } from '../../amplify/data/resource';
-// import { generateClient } from 'aws-amplify/data';
-
-// const client = generateClient<Schema>();
-
-interface ContactFormData {
-  name: string;
-  email: string;
-  message: string;
-}
+import React, { useState } from 'react';
 
 const ContactUs: React.FC = () => {
-  const [formData, setFormData] = useState<ContactFormData>({
-    name: '',
-    email: '',
-    message: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [responseMessage, setResponseMessage] = useState<string>('');
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [summary, setSummary] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
+  const handleContact = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     try {
-      // await client.models.Contact.create({
-      //   ...formData,
-      //   timestamp: new Date().toISOString(),
-      // });
-      setResponseMessage('Thank you for contacting us!');
-      setFormData({ name: '', email: '', message: '' });
-    } catch (err: any) {
-      setResponseMessage(err.message);
-    } finally {
-      setIsSubmitting(false);
+      const response = await fetch('/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, summary }),
+      });
+      const data = await response.json();
+      console.log(data)
+      setMessage('Contact message sent!');
+    } catch (error) {
+      setMessage('Failed to send contact message.');
     }
   };
 
   return (
-    <View padding="2rem">
-      <Heading level={1}>Contact Us</Heading>
-      {responseMessage && <p>{responseMessage}</p>}
-      <form onSubmit={handleSubmit}>
-        <Flex direction="column" gap="1rem">
-          <TextField
-            label="Name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          <TextAreaField
-            label="Message"
-            name="message"
-            value={formData.message}
-            onChange={handleChange}
-            required
-          />
-          <Button type="submit" variation="primary" isLoading={isSubmitting}>
-            {isSubmitting ? 'Sending...' : 'Send'}
-          </Button>
-        </Flex>
+    <div>
+      <h2>Contact Us</h2>
+      <form onSubmit={handleContact}>
+        <div>
+          <label>Email:</label>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label>Name:</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div>
+          <label>Message:</label>
+          <textarea value={summary} onChange={(e) => setSummary(e.target.value)} required />
+        </div>
+        <button type="submit">Send</button>
       </form>
-    </View>
+      {message && <p>{message}</p>}
+    </div>
   );
 };
 
