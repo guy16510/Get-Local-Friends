@@ -7,21 +7,31 @@ import {
   LambdaIntegration,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
-import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
-import { myApiFunction } from "./functions/api-function/resource";
+import { Policy } from "aws-cdk-lib/aws-iam";
+
+import { geoApiFunction } from "./functions/geo-api/resource";
+import { contactApiFunction } from "./functions/contact-api/resource";
+import { chatApiFunction } from "./functions/chat-api/resource";
+
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 
+import { addEndpoint } from "./utils/apiUtils";
+import { createApiPolicy } from "./utils/apiPolicy";
+
+// Define the backend, including auth, data, and our function resources.
 const backend = defineBackend({
   auth,
   data,
-  myApiFunction,
+  geoApiFunction,
+  contactApiFunction,
+  chatApiFunction,
 });
 
-// create a new API stack
+// Create an API stack.
 const apiStack = backend.createStack("api-stack");
 
-// create a new REST API
+// Create a new REST API with CORS and stage settings.
 const myRestApi = new RestApi(apiStack, "RestApi", {
   restApiName: "myRestApi",
   deploy: true,
@@ -29,71 +39,50 @@ const myRestApi = new RestApi(apiStack, "RestApi", {
     stageName: "dev",
   },
   defaultCorsPreflightOptions: {
-    allowOrigins: Cors.ALL_ORIGINS, // Restrict this to domains you trust
-    allowMethods: Cors.ALL_METHODS, // Specify only the methods you need to allow
-    allowHeaders: Cors.DEFAULT_HEADERS, // Specify only the headers you need to allow
+    allowOrigins: Cors.ALL_ORIGINS, // Update to restrict in production
+    allowMethods: Cors.ALL_METHODS,
+    allowHeaders: Cors.DEFAULT_HEADERS,
   },
 });
 
-// create a new Lambda integration
-const lambdaIntegration = new LambdaIntegration(
-  backend.myApiFunction.resources.lambda
+// Create Lambda integrations for our endpoints.
+const geoLambdaIntegration = new LambdaIntegration(
+  backend.geoApiFunction.resources.lambda
+);
+const contactLambdaIntegration = new LambdaIntegration(
+  backend.contactApiFunction.resources.lambda
+);
+const chatLambdaIntegration = new LambdaIntegration(
+  backend.chatApiFunction.resources.lambda
 );
 
-// create a new resource path with IAM authorization
-const itemsPath = myRestApi.root.addResource("items", {
-  defaultMethodOptions: {
-    authorizationType: AuthorizationType.IAM,
-  },
-});
-
-// add methods you would like to create to the resource path
-itemsPath.addMethod("GET", lambdaIntegration);
-itemsPath.addMethod("POST", lambdaIntegration);
-itemsPath.addMethod("DELETE", lambdaIntegration);
-itemsPath.addMethod("PUT", lambdaIntegration);
-
-// add a proxy resource path to the API
-itemsPath.addProxy({
-  anyMethod: true,
-  defaultIntegration: lambdaIntegration,
-});
-
-// create a new Cognito User Pools authorizer
+// Create a Cognito User Pools authorizer for secured endpoints.
 const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, "CognitoAuth", {
   cognitoUserPools: [backend.auth.resources.userPool],
 });
 
-// create a new resource path with Cognito authorization
-const booksPath = myRestApi.root.addResource("cognito-auth-path");
-booksPath.addMethod("GET", lambdaIntegration, {
+// Add endpoints for the geo-api, contact-api, and chat-api.
+addEndpoint(myRestApi, "geo", geoLambdaIntegration, ["GET", "POST", "PUT", "DELETE"], {
   authorizationType: AuthorizationType.COGNITO,
   authorizer: cognitoAuth,
 });
 
-// create a new IAM policy to allow Invoke access to the API
-const apiRestPolicy = new Policy(apiStack, "RestApiPolicy", {
-  statements: [
-    new PolicyStatement({
-      actions: ["execute-api:Invoke"],
-      resources: [
-        `${myRestApi.arnForExecuteApi("*", "/items", "dev")}`,
-        `${myRestApi.arnForExecuteApi("*", "/items/*", "dev")}`,
-        `${myRestApi.arnForExecuteApi("*", "/cognito-auth-path", "dev")}`,
-      ],
-    }),
-  ],
+addEndpoint(myRestApi, "contact", contactLambdaIntegration, ["GET", "POST"], {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
 });
 
-// attach the policy to the authenticated and unauthenticated IAM roles
-backend.auth.resources.authenticatedUserIamRole.attachInlinePolicy(
-  apiRestPolicy
-);
-backend.auth.resources.unauthenticatedUserIamRole.attachInlinePolicy(
-  apiRestPolicy
-);
+addEndpoint(myRestApi, "chat", chatLambdaIntegration, ["GET", "POST"], {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
 
-// add outputs to the configuration file
+// Create and attach an IAM policy to allow API Gateway invoke access.
+const apiPolicy = createApiPolicy(apiStack, myRestApi, ["/geo", "/contact", "/chat"], "dev");
+backend.auth.resources.authenticatedUserIamRole.attachInlinePolicy(apiPolicy);
+backend.auth.resources.unauthenticatedUserIamRole.attachInlinePolicy(apiPolicy);
+
+// Export API details via outputs.
 backend.addOutput({
   custom: {
     API: {
