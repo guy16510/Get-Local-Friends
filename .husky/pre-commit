@@ -1,1 +1,1 @@
-npm run tsCheck
+npx tsc --noEmit
