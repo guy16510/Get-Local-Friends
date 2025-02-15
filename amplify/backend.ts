@@ -7,6 +7,7 @@ import {
   LambdaIntegration,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 import { geoApiFunction } from "./functions/geo-api/resource";
 import { contactApiFunction } from "./functions/contact-api/resource";
@@ -73,6 +74,47 @@ addEndpoint(myRestApi, "chat", chatLambdaIntegration, ["GET", "POST"], {
 addEndpoint(myRestApi, "premium", premiumLambdaIntegration, ["POST"], {
   authorizationType: AuthorizationType.NONE,
 });
+
+// Attach DynamoDB permissions for each API's Lambda function.
+
+// Contact API Lambda: permissions for Contact table.
+const contactLambdaRole = backend.contactApiFunction.resources.lambda.role;
+if (contactLambdaRole) {
+  contactLambdaRole.addToPrincipalPolicy(
+    new PolicyStatement({
+      actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"],
+      resources: [
+        `arn:aws:dynamodb:${Stack.of(myRestApi).region}:${Stack.of(myRestApi).account}:table/Contact`,
+      ],
+    })
+  );
+}
+
+// Geo API Lambda: permissions for GeoItem table.
+const geoLambdaRole = backend.geoApiFunction.resources.lambda.role;
+if (geoLambdaRole) {
+  geoLambdaRole.addToPrincipalPolicy(
+    new PolicyStatement({
+      actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"],
+      resources: [
+        `arn:aws:dynamodb:${Stack.of(myRestApi).region}:${Stack.of(myRestApi).account}:table/GeoItem`,
+      ],
+    })
+  );
+}
+
+// Chat API Lambda: permissions for Chat table.
+const chatLambdaRole = backend.chatApiFunction.resources.lambda.role;
+if (chatLambdaRole) {
+  chatLambdaRole.addToPrincipalPolicy(
+    new PolicyStatement({
+      actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"],
+      resources: [
+        `arn:aws:dynamodb:${Stack.of(myRestApi).region}:${Stack.of(myRestApi).account}:table/Chat`,
+      ],
+    })
+  );
+}
 
 // Export API details via outputs.
 backend.addOutput({

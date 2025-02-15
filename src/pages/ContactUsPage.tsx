@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { contactService } from '../services/modelServices';
-
+// import { contactService } from '../services/modelServices';
+import * as API from '@aws-amplify/api-rest';
 interface ContactFormData {
   email: string;
   name: string;
@@ -20,7 +20,20 @@ const ContactUsPage = () => {
     setStatus({ message: 'Sending...', error: false });
 
     try {
-      await contactService.create(formData);
+      // await contactService.create(formData);
+      const { response } = API.post({
+        apiName: 'myRestApi',
+        path: 'contact',
+        options: {
+          body: {
+            email: formData.email,
+            name: formData.name,
+            summary: formData.summary
+          }
+      }});
+      const res = await response;
+      const json = await res.body.json();
+      console.log(json);
       setStatus({ message: 'Message sent successfully!', error: false });
       setFormData({ email: '', name: '', summary: '' });
     } catch (error) {

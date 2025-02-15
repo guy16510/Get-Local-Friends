@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { geoItemService } from '../services/modelServices';
+// import { geoItemService } from '../services/modelServices';
+import * as API from '@aws-amplify/api-rest';
 
 const SignUpPage = () => {
   const [location, setLocation] = useState<{lat: number; lng: number} | null>(null);
-  const [userId] = useState<string>(''); // In real app, get from auth
+  // const [userId] = useState<string>('fdsoij'); // In real app, get from auth
   const [status, setStatus] = useState({ message: '', error: false });
 
   useEffect(() => {
@@ -30,13 +31,30 @@ const SignUpPage = () => {
     if (!location) return;
 
     try {
-      await geoItemService.create({
-        lat: location.lat,
-        lng: location.lng,
-        userId,
-        hashKey: `${location.lat}-${location.lng}`,
-        rangeKey: new Date().toISOString()
-      });
+      // await geoItemService.create({
+      //   lat: location.lat,
+      //   lng: location.lng,
+      //   userId,
+      //   hashKey: `${location.lat}-${location.lng}`,
+      //   rangeKey: new Date().toISOString()
+      // });
+
+              const { response } = API.post({
+                apiName: 'myRestApi',
+                path: 'geo',
+                options: {
+                  body: {
+                  lat: location.lat,
+                  lng: location.lng,
+                  userId: "user123",
+                  hashKey: `${location.lat}-${location.lng}`,
+                  rangeKey: new Date().toISOString()
+                }}
+              });
+              const res = await response;
+              const json = await res.body.json();
+              console.log(json);
+
       setStatus({ message: 'Location registered successfully!', error: false });
     } catch (error) {
       setStatus({ 

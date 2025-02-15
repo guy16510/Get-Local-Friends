@@ -56,7 +56,7 @@ export async function callApi(
       if (!session.tokens?.idToken) {
         throw new Error('No ID token available');
       }
-
+      debugger;
       // Add both token and AWS credentials
       headers['Authorization'] = session.tokens.idToken.toString();
       headers['x-amz-security-token'] = credentials.sessionToken;
