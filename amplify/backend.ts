@@ -8,6 +8,10 @@ import {
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+
+// Import your deployment outputs.
+import outputs from "../amplify_outputs.json";
 
 import { geoApiFunction } from "./functions/geo-api/resource";
 import { contactApiFunction } from "./functions/contact-api/resource";
@@ -16,7 +20,6 @@ import { addPremiumGroupFunction } from "./functions/addPremiumGroup-api/resourc
 
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
-
 import { addEndpoint } from "./utils/apiUtils";
 
 // Define the backend including auth, data, and our Lambda functions.
@@ -40,7 +43,7 @@ const myRestApi = new RestApi(apiStack, "RestApi", {
     stageName: "dev",
   },
   defaultCorsPreflightOptions: {
-    allowOrigins: Cors.ALL_ORIGINS, // Allow all origins (adjust as needed for production)
+    allowOrigins: Cors.ALL_ORIGINS, // Adjust for production as needed
     allowMethods: Cors.ALL_METHODS,
     allowHeaders: Cors.DEFAULT_HEADERS,
   },
@@ -61,7 +64,6 @@ const premiumLambdaIntegration = new LambdaIntegration(
 );
 
 // Define your routes using your custom addEndpoint helper.
-// Here, we set authorizationType to NONE to make all endpoints public.
 addEndpoint(myRestApi, "geo", geoLambdaIntegration, ["GET", "POST", "PUT", "DELETE"], {
   authorizationType: AuthorizationType.NONE,
 });
@@ -75,54 +77,68 @@ addEndpoint(myRestApi, "premium", premiumLambdaIntegration, ["POST"], {
   authorizationType: AuthorizationType.NONE,
 });
 
-// Attach DynamoDB permissions for each API's Lambda function.
+// ---
+// Extract table names from outputs, falling back if necessary.
+const outputsCustom = (outputs as any).custom || {};
+const dataOutputs = outputsCustom.Data || {};
 
-// Contact API Lambda: permissions for Contact table.
+const contactTableName = dataOutputs.Contact?.tableName || "Contact-6yixxt3zrratpbost7ea2ixgq4-NONE";
+const geoTableName = dataOutputs.GeoItem?.tableName || "GeoItem-DEFAULT";
+const chatTableName = dataOutputs.Chat?.tableName || "Chat-DEFAULT";
+
+// Cast each function to a concrete lambda.Function to use addEnvironment.
+const contactLambdaFn = backend.contactApiFunction.resources.lambda as lambda.Function;
+contactLambdaFn.addEnvironment("CONTACT_TABLE", contactTableName);
+
+const geoLambdaFn = backend.geoApiFunction.resources.lambda as lambda.Function;
+geoLambdaFn.addEnvironment("GEO_TABLE", geoTableName);
+
+const chatLambdaFn = backend.chatApiFunction.resources.lambda as lambda.Function;
+chatLambdaFn.addEnvironment("CHAT_TABLE", chatTableName);
+
+// ---
+// Attach DynamoDB permissions for each API's Lambda function.
+const region = Stack.of(myRestApi).region;
+const account = Stack.of(myRestApi).account;
+
 const contactLambdaRole = backend.contactApiFunction.resources.lambda.role;
 if (contactLambdaRole) {
   contactLambdaRole.addToPrincipalPolicy(
     new PolicyStatement({
       actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"],
-      resources: [
-        `arn:aws:dynamodb:${Stack.of(myRestApi).region}:${Stack.of(myRestApi).account}:table/Contact`,
-      ],
+      resources: [`arn:aws:dynamodb:${region}:${account}:table/${contactTableName}`],
     })
   );
 }
 
-// Geo API Lambda: permissions for GeoItem table.
 const geoLambdaRole = backend.geoApiFunction.resources.lambda.role;
 if (geoLambdaRole) {
   geoLambdaRole.addToPrincipalPolicy(
     new PolicyStatement({
       actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"],
-      resources: [
-        `arn:aws:dynamodb:${Stack.of(myRestApi).region}:${Stack.of(myRestApi).account}:table/GeoItem`,
-      ],
+      resources: [`arn:aws:dynamodb:${region}:${account}:table/${geoTableName}`],
     })
   );
 }
 
-// Chat API Lambda: permissions for Chat table.
 const chatLambdaRole = backend.chatApiFunction.resources.lambda.role;
 if (chatLambdaRole) {
   chatLambdaRole.addToPrincipalPolicy(
     new PolicyStatement({
       actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"],
-      resources: [
-        `arn:aws:dynamodb:${Stack.of(myRestApi).region}:${Stack.of(myRestApi).account}:table/Chat`,
-      ],
+      resources: [`arn:aws:dynamodb:${region}:${account}:table/${chatTableName}`],
     })
   );
 }
 
+// ---
 // Export API details via outputs.
 backend.addOutput({
   custom: {
     API: {
       [myRestApi.restApiName]: {
         endpoint: myRestApi.url,
-        region: Stack.of(myRestApi).region,
+        region: region,
         apiName: myRestApi.restApiName,
       },
     },
