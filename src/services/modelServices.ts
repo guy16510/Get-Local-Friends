@@ -26,6 +26,7 @@ interface Chat {
 // GeoItem service
 export const geoItemService = {
   async create(data: Partial<GeoItem>) {
+    debugger;
     return callApi('/geoitems', 'POST', data, true);
   },
 

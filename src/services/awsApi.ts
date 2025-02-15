@@ -68,7 +68,7 @@ export async function callApi(
     }
   }
 
-  const response = await fetch(url, {
+  const response = await fetch("https://sf3cgrgze1.execute-api.us-east-1.amazonaws.com/dev" + url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,

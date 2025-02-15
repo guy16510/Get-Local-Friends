@@ -1,6 +1,6 @@
-// import { post } from 'aws-amplify/api';
+import { post } from 'aws-amplify/api';
 // Import your AWS API service if needed
-import { callApi } from './awsApi';
+// import { callApi } from './awsApi';
 
 /**
  * Calls the custom endpoint to add the current user to the "premium" group.
@@ -8,22 +8,22 @@ import { callApi } from './awsApi';
 export async function addUserToPremiumGroup(): Promise<void> {
   try {
     // Option 1: Using Amplify Gen 2 API directly
-    // await post({
-    //   apiName: 'myRestApi',
-    //   path: '/premium',
-    //   options: {
-    //     body: {}
-    //   }
-    // });
+    await post({
+      apiName: 'myRestApi',
+      path: '/premium',
+      options: {
+        body: {}
+      }
+    });
 
     // Option 2: Using your custom callApi service
 
-    await callApi(
-      'your-api-endpoint/premium',  // Replace with your actual API endpoint
-      'POST',
-      {},
-      true  // requiresAuth = true
-    );
+    // await callApi(
+    //   'your-api-endpoint/premium',  // Replace with your actual API endpoint
+    //   'POST',
+    //   {},
+    //   true  // requiresAuth = true
+    // );
     
 
   } catch (error) {
