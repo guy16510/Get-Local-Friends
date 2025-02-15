@@ -1,5 +1,8 @@
 version: 1
 backend:
+  env:
+    variables:
+      BRANCH_NAME: $AWS_BRANCH
   phases:
     build:
       commands:

@@ -1,8 +1,9 @@
 import type { APIGatewayProxyHandler } from "aws-lambda";
 import { buildResponse } from "../../utils/apiUtils";
 import { putItem, getItem, updateItem } from "../../utils/dynamoDbService";
-
-const CONTACT_TABLE = process.env.CONTACT_TABLE || "Contact";
+const branchName = process.env.BRANCH_NAME || "default";
+console.log("Current branch name:", branchName);
+const CONTACT_TABLE = `Contact-${branchName}`;
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log("Contact API Event:", event);

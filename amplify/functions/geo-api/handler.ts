@@ -5,7 +5,10 @@ import { geoDataManager } from "../../utils/geoDataManager";
 import { DynamoDB } from "aws-sdk";
 
 const ddb = new DynamoDB.DocumentClient();
-const GEO_TABLE = process.env.GEO_TABLE || "GeoItem";
+const branchName = process.env.BRANCH_NAME || "default";
+console.log("Current branch name:", branchName);
+const GEO_TABLE = `GeoItem-${branchName}`;
+
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log("Geo API Event:", event);

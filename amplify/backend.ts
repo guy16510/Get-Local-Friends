@@ -10,9 +10,6 @@ import {
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 
-// Import your deployment outputs.
-import outputs from "../amplify_outputs.json";
-
 import { geoApiFunction } from "./functions/geo-api/resource";
 import { contactApiFunction } from "./functions/contact-api/resource";
 import { chatApiFunction } from "./functions/chat-api/resource";
@@ -77,14 +74,14 @@ addEndpoint(myRestApi, "premium", premiumLambdaIntegration, ["POST"], {
   authorizationType: AuthorizationType.NONE,
 });
 
-// ---
-// Extract table names from outputs, falling back if necessary.
-const outputsCustom = (outputs as any).custom || {};
-const dataOutputs = outputsCustom.Data || {};
 
-const contactTableName = dataOutputs.Contact?.tableName || "Contact-6yixxt3zrratpbost7ea2ixgq4-NONE";
-const geoTableName = dataOutputs.GeoItem?.tableName || "GeoItem-DEFAULT";
-const chatTableName = dataOutputs.Chat?.tableName || "Chat-DEFAULT";
+
+const rawBranchName = process.env.BRANCH_NAME || "default";
+const branchName = `${rawBranchName}`;
+
+const contactTableName = `Contact-${branchName}`;
+const geoTableName = `GeoItemt-${branchName}`;
+const chatTableName = `Chat-${branchName}`;
 
 // Cast each function to a concrete lambda.Function to use addEnvironment.
 const contactLambdaFn = backend.contactApiFunction.resources.lambda as lambda.Function;

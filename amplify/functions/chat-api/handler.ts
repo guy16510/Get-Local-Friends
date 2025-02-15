@@ -2,7 +2,10 @@ import type { APIGatewayProxyHandler } from "aws-lambda";
 import { buildResponse } from "../../utils/apiUtils";
 import { putItem, queryItems, updateItem } from "../../utils/dynamoDbService";
 
-const CHAT_TABLE = process.env.CHAT_TABLE || "Chat";
+const branchName = process.env.BRANCH_NAME || "default";
+console.log("Current branch name:", branchName);
+const CHAT_TABLE = `Chat-${branchName}`;
+
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log("Chat API Event:", event);
