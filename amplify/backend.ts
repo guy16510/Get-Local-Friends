@@ -1,3 +1,4 @@
+// backend.ts
 import { defineBackend } from "@aws-amplify/backend";
 import { Stack } from "aws-cdk-lib";
 import {
@@ -12,6 +13,7 @@ import { Policy } from "aws-cdk-lib/aws-iam";
 import { geoApiFunction } from "./functions/geo-api/resource";
 import { contactApiFunction } from "./functions/contact-api/resource";
 import { chatApiFunction } from "./functions/chat-api/resource";
+import { addPremiumGroupFunction } from "./functions/addPremiumGroup-api/resource";
 
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
@@ -26,6 +28,7 @@ const backend = defineBackend({
   geoApiFunction,
   contactApiFunction,
   chatApiFunction,
+  addPremiumGroupFunction,
 });
 
 // Create an API stack.
@@ -39,7 +42,7 @@ const myRestApi = new RestApi(apiStack, "RestApi", {
     stageName: "dev",
   },
   defaultCorsPreflightOptions: {
-    allowOrigins: Cors.ALL_ORIGINS, // Update to restrict in production
+    allowOrigins: Cors.ALL_ORIGINS, // Restrict in production
     allowMethods: Cors.ALL_METHODS,
     allowHeaders: Cors.DEFAULT_HEADERS,
   },
@@ -55,30 +58,37 @@ const contactLambdaIntegration = new LambdaIntegration(
 const chatLambdaIntegration = new LambdaIntegration(
   backend.chatApiFunction.resources.lambda
 );
+const premiumLambdaIntegration = new LambdaIntegration(
+  backend.addPremiumGroupFunction.resources.lambda
+);
 
 // Create a Cognito User Pools authorizer for secured endpoints.
 const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, "CognitoAuth", {
   cognitoUserPools: [backend.auth.resources.userPool],
 });
 
-// Add endpoints for the geo-api, contact-api, and chat-api.
+// Add endpoints for the geo-api, contact-api, chat-api.
 addEndpoint(myRestApi, "geo", geoLambdaIntegration, ["GET", "POST", "PUT", "DELETE"], {
   authorizationType: AuthorizationType.COGNITO,
   authorizer: cognitoAuth,
 });
-
 addEndpoint(myRestApi, "contact", contactLambdaIntegration, ["GET", "POST"], {
   authorizationType: AuthorizationType.COGNITO,
   authorizer: cognitoAuth,
 });
-
 addEndpoint(myRestApi, "chat", chatLambdaIntegration, ["GET", "POST"], {
   authorizationType: AuthorizationType.COGNITO,
   authorizer: cognitoAuth,
 });
 
+// Add a new endpoint for upgrading to premium.
+addEndpoint(myRestApi, "premium", premiumLambdaIntegration, ["POST"], {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
+
 // Create and attach an IAM policy to allow API Gateway invoke access.
-const apiPolicy = createApiPolicy(apiStack, myRestApi, ["/geo", "/contact", "/chat"], "dev");
+const apiPolicy = createApiPolicy(apiStack, myRestApi, ["/geo", "/contact", "/chat", "/premium"], "dev");
 backend.auth.resources.authenticatedUserIamRole.attachInlinePolicy(apiPolicy);
 backend.auth.resources.unauthenticatedUserIamRole.attachInlinePolicy(apiPolicy);
 

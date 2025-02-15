@@ -5,13 +5,15 @@ import { ThemeProvider, Authenticator } from '@aws-amplify/ui-react';
 import theme from './theme';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
-import SignupForm from './pages/SignupForm';
-import ContactUs from './pages/ContactUs';
+import SignUpPage from './pages/SignupPage';
+import ContactUsPage from './pages/ContactUsPage';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import Footer from './components/Footer';
 import LoginPage from './pages/LoginPage';
 import TestPage from './pages/TestPage';
+import ChatPage from './pages/ChatPage';
+import PremiumPage from './pages/PremiumPage';
 
 const App: React.FC = () => {
   const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
@@ -32,11 +34,27 @@ const App: React.FC = () => {
             path="/signup"
             element={
               <Authenticator>
-                <SignupForm />
+                <SignUpPage />
               </Authenticator>
             }
           />
-          <Route path="/contact" element={<ContactUs />} />
+          <Route
+            path="/chat"
+            element={
+              <Authenticator>
+                <ChatPage />
+              </Authenticator>
+            }
+          />
+          <Route
+            path="/premium"
+            element={
+              <Authenticator>
+                <PremiumPage />
+              </Authenticator>
+            }
+          />
+          <Route path="/contact" element={<ContactUsPage />} />
           <Route path="/test" element={<TestPage />} />
           <Route
             path="/profile"

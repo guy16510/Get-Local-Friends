@@ -8,14 +8,14 @@ const schema = a.schema({
     lng: a.float(),
     userId: a.string(),
   })
-  .authorization(allow => [allow.authenticated()]),  // Changed from private() to owner()
+  .authorization(allow => [allow.groups(["authenticated", "premium"])]), // now only users in these groups can access
 
   Contact: a.model({
     email: a.string(),
     name: a.string(),
     summary: a.string(),
   })
-  .authorization(allow => [allow.guest()]),  // This is correct
+  .authorization(allow => [allow.guest()]),  // still open
 
   Chat: a.model({
     senderId: a.string(),
@@ -23,7 +23,7 @@ const schema = a.schema({
     message: a.string(),
     timestamp: a.datetime(),
   })
-  .authorization(allow => [allow.authenticated()]),  // Changed from private() to owner()
+  .authorization(allow => [allow.groups(["authenticated", "premium"])]), // only these groups allowed
 });
 
 export type Schema = ClientSchema<typeof schema>;
