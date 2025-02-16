@@ -1,145 +1,137 @@
-// backend.ts
 import { defineBackend } from "@aws-amplify/backend";
 import { Stack } from "aws-cdk-lib";
 import {
   AuthorizationType,
+  CognitoUserPoolsAuthorizer,
   Cors,
   LambdaIntegration,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
-import { PolicyStatement } from "aws-cdk-lib/aws-iam";
-import * as lambda from "aws-cdk-lib/aws-lambda";
-
+import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { chatApiFunction } from "./functions/chat-api/resource";
 import { geoApiFunction } from "./functions/geo-api/resource";
 import { contactApiFunction } from "./functions/contact-api/resource";
-import { chatApiFunction } from "./functions/chat-api/resource";
-import { addPremiumGroupFunction } from "./functions/addPremiumGroup-api/resource";
-
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
-import { addEndpoint } from "./utils/apiUtils";
 
-// Define the backend including auth, data, and our Lambda functions.
 const backend = defineBackend({
   auth,
   data,
+  chatApiFunction,
   geoApiFunction,
   contactApiFunction,
-  chatApiFunction,
-  addPremiumGroupFunction,
 });
 
-// Create an API stack.
+// Create a new API stack
 const apiStack = backend.createStack("api-stack");
 
-// Create a new REST API with CORS and stage settings.
-const myRestApi = new RestApi(apiStack, "RestApi", {
-  restApiName: "myRestApi",
+// Create a new REST API
+const getLocalFriendsApi = new RestApi(apiStack, "RestApi", {
+  restApiName: "getLocalFriendsApi",
   deploy: true,
   deployOptions: {
     stageName: "dev",
   },
   defaultCorsPreflightOptions: {
-    allowOrigins: Cors.ALL_ORIGINS, // Adjust for production as needed
-    allowMethods: Cors.ALL_METHODS,
-    allowHeaders: Cors.DEFAULT_HEADERS,
+    allowOrigins: Cors.ALL_ORIGINS, // Restrict this to domains you trust
+    allowMethods: Cors.ALL_METHODS, // Specify only the methods you need to allow
+    allowHeaders: Cors.DEFAULT_HEADERS, // Specify only the headers you need to allow
   },
 });
 
-// Create Lambda integrations for each endpoint.
+// Create Lambda integrations for each API function
+const chatLambdaIntegration = new LambdaIntegration(
+  backend.chatApiFunction.resources.lambda
+);
 const geoLambdaIntegration = new LambdaIntegration(
   backend.geoApiFunction.resources.lambda
 );
 const contactLambdaIntegration = new LambdaIntegration(
   backend.contactApiFunction.resources.lambda
 );
-const chatLambdaIntegration = new LambdaIntegration(
-  backend.chatApiFunction.resources.lambda
-);
-const premiumLambdaIntegration = new LambdaIntegration(
-  backend.addPremiumGroupFunction.resources.lambda
-);
 
-// Define your routes using your custom addEndpoint helper.
-addEndpoint(myRestApi, "geo", geoLambdaIntegration, ["GET", "POST", "PUT", "DELETE"], {
-  authorizationType: AuthorizationType.NONE,
+// Create new resource paths for each API function with IAM authorization
+
+// Chat API endpoint
+const chatPath = getLocalFriendsApi.root.addResource("chat", {
+  defaultMethodOptions: { authorizationType: AuthorizationType.IAM },
 });
-addEndpoint(myRestApi, "contact", contactLambdaIntegration, ["GET", "POST"], {
-  authorizationType: AuthorizationType.NONE,
-});
-addEndpoint(myRestApi, "chat", chatLambdaIntegration, ["GET", "POST"], {
-  authorizationType: AuthorizationType.NONE,
-});
-addEndpoint(myRestApi, "premium", premiumLambdaIntegration, ["POST"], {
-  authorizationType: AuthorizationType.NONE,
+chatPath.addMethod("ANY", chatLambdaIntegration);
+chatPath.addProxy({
+  anyMethod: true,
+  defaultIntegration: chatLambdaIntegration,
 });
 
+// Geo API endpoint
+const geoPath = getLocalFriendsApi.root.addResource("geo", {
+  defaultMethodOptions: { authorizationType: AuthorizationType.IAM },
+});
+geoPath.addMethod("ANY", geoLambdaIntegration);
+geoPath.addProxy({
+  anyMethod: true,
+  defaultIntegration: geoLambdaIntegration,
+});
 
+// Contact API endpoint
+const contactPath = getLocalFriendsApi.root.addResource("contact", {
+  defaultMethodOptions: { authorizationType: AuthorizationType.IAM },
+});
+contactPath.addMethod("ANY", contactLambdaIntegration);
+contactPath.addProxy({
+  anyMethod: true,
+  defaultIntegration: contactLambdaIntegration,
+});
 
-const rawBranchName = process.env.BRANCH_NAME || "default";
-const branchName = `${rawBranchName}`;
+// Create a Cognito User Pools authorizer
+const cognitoAuth = new CognitoUserPoolsAuthorizer(apiStack, "CognitoAuth", {
+  cognitoUserPools: [backend.auth.resources.userPool],
+});
 
-const contactTableName = `Contact-${branchName}`;
-const geoTableName = `GeoItemt-${branchName}`;
-const chatTableName = `Chat-${branchName}`;
+// Create a resource path with Cognito authorization.
+// Here I’ve chosen to use the chat Lambda integration, assuming chat needs user auth.
+// Adjust as necessary.
+const cognitoAuthPath = getLocalFriendsApi.root.addResource("cognito-auth-path");
+cognitoAuthPath.addMethod("GET", chatLambdaIntegration, {
+  authorizationType: AuthorizationType.COGNITO,
+  authorizer: cognitoAuth,
+});
 
-// Cast each function to a concrete lambda.Function to use addEnvironment.
-const contactLambdaFn = backend.contactApiFunction.resources.lambda as lambda.Function;
-contactLambdaFn.addEnvironment("CONTACT_TABLE", contactTableName);
-
-const geoLambdaFn = backend.geoApiFunction.resources.lambda as lambda.Function;
-geoLambdaFn.addEnvironment("GEO_TABLE", geoTableName);
-
-const chatLambdaFn = backend.chatApiFunction.resources.lambda as lambda.Function;
-chatLambdaFn.addEnvironment("CHAT_TABLE", chatTableName);
-
-// ---
-// Attach DynamoDB permissions for each API's Lambda function.
-const region = Stack.of(myRestApi).region;
-const account = Stack.of(myRestApi).account;
-
-const contactLambdaRole = backend.contactApiFunction.resources.lambda.role;
-if (contactLambdaRole) {
-  contactLambdaRole.addToPrincipalPolicy(
+// Create an IAM policy to allow Invoke access to the API
+const apiRestPolicy = new Policy(apiStack, "RestApiPolicy", {
+  statements: [
     new PolicyStatement({
-      actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"],
-      resources: [`arn:aws:dynamodb:${region}:${account}:table/${contactTableName}`],
-    })
-  );
-}
+      actions: ["execute-api:Invoke"],
+      resources: [
+        // Chat endpoint
+        `${getLocalFriendsApi.arnForExecuteApi("*", "/chat", "dev")}`,
+        `${getLocalFriendsApi.arnForExecuteApi("*", "/chat/*", "dev")}`,
+        // Geo endpoint
+        `${getLocalFriendsApi.arnForExecuteApi("*", "/geo", "dev")}`,
+        `${getLocalFriendsApi.arnForExecuteApi("*", "/geo/*", "dev")}`,
+        // Contact endpoint
+        `${getLocalFriendsApi.arnForExecuteApi("*", "/contact", "dev")}`,
+        `${getLocalFriendsApi.arnForExecuteApi("*", "/contact/*", "dev")}`,
+        // Cognito-protected endpoint
+        `${getLocalFriendsApi.arnForExecuteApi("*", "/cognito-auth-path", "dev")}`,
+        `${getLocalFriendsApi.arnForExecuteApi("*", "/cognito-auth-path/*", "dev")}`,
+      ],
+    }),
+  ],
+});
 
-const geoLambdaRole = backend.geoApiFunction.resources.lambda.role;
-if (geoLambdaRole) {
-  geoLambdaRole.addToPrincipalPolicy(
-    new PolicyStatement({
-      actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"],
-      resources: [`arn:aws:dynamodb:${region}:${account}:table/${geoTableName}`],
-    })
-  );
-}
+// Attach the policy to both authenticated and unauthenticated IAM roles
+backend.auth.resources.authenticatedUserIamRole.attachInlinePolicy(apiRestPolicy);
+backend.auth.resources.unauthenticatedUserIamRole.attachInlinePolicy(apiRestPolicy);
 
-const chatLambdaRole = backend.chatApiFunction.resources.lambda.role;
-if (chatLambdaRole) {
-  chatLambdaRole.addToPrincipalPolicy(
-    new PolicyStatement({
-      actions: ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"],
-      resources: [`arn:aws:dynamodb:${region}:${account}:table/${chatTableName}`],
-    })
-  );
-}
-
-// ---
-// Export API details via outputs.
+// Add outputs to the configuration file
 backend.addOutput({
   custom: {
     API: {
-      [myRestApi.restApiName]: {
-        endpoint: myRestApi.url,
-        region: region,
-        apiName: myRestApi.restApiName,
+      [getLocalFriendsApi.restApiName]: {
+        endpoint: getLocalFriendsApi.url,
+        region: Stack.of(getLocalFriendsApi).region,
+        apiName: getLocalFriendsApi.restApiName,
       },
     },
   },
 });
-
-export default backend;
